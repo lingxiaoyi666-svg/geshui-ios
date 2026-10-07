@@ -1,0 +1,1056 @@
+/* ============================================================
+   sdtheme.css —— 新版（com.geshui.app531707）视觉皮肤层
+   用途：给旧版 37 个 H5 页面套上"现在这个 app"的外观
+   载入顺序：放在各页 <style> 之后、页面自有 css 之前/之间均可，
+             因为本文件大量使用 !important 覆盖旧样式。
+   ============================================================ */
+
+:root {
+    /* 主色 / 渐变 */
+    --sd-primary: #1677FF;
+    --sd-primary-deep: #0958D9;
+    --sd-primary-light: #E6F4FF;
+    --sd-cyan: #13C2C2;
+    --sd-green: #00C48C;
+    --sd-orange: #FF9A2E;
+    --sd-orange-light: #FFF3E4;
+    --sd-purple: #7B5CF0;
+
+    /* 头部渐变（首页浅蓝 / 我的页蓝紫） */
+    --sd-head-home: linear-gradient(175deg, #4E93F5 0%, #7FB6F8 38%, #D8E9FF 74%, #F2F6FF 100%);
+    --sd-head-mine: linear-gradient(160deg, #3B6FF5 0%, #4E86F7 42%, #7B5CF0 100%);
+    --sd-head-solid: linear-gradient(180deg, #3F86F0 0%, #5C9BF5 100%);
+
+    /* 背景 / 卡片 */
+    --sd-page-bg: #F5F6FA;
+    --sd-card: #FFFFFF;
+    --sd-card-alt: #FAFBFF;
+    --sd-line: #F0F0F0;
+    --sd-radius: 8px;
+    --sd-radius-lg: 12px;
+    --sd-radius-pill: 999px;
+
+    /* 文字 */
+    --sd-text: #1A1A1A;
+    --sd-text-2: #666D7A;
+    --sd-text-3: #9AA1AE;
+
+    /* 阴影 */
+    --sd-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.03);
+    --sd-shadow-float: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* 底部导航占位高度 */
+    --sd-nav-h: 70px;
+    --sd-nav-clearance: 86px;
+    --bottom-nav-clearance: 86px;
+}
+
+/* ---------------- 全局重置 / 底色 ---------------- */
+html, body {
+    background: var(--sd-page-bg) !important;
+    color: var(--sd-text);
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
+        'Microsoft YaHei', Roboto, sans-serif !important;
+    padding-bottom: var(--sd-nav-clearance);
+}
+
+/* 旧版页面自带的全屏纯色头（#2c80f4 系）统一成新版蓝
+   注意：必须排除列表项/卡片内部的 header，否则 .list-header 会被涂成蓝条 */
+[class*="-header"]:not(.sd-keep-header):not([class*="list-header"]):not([class*="item-header"]):not([class*="card-header"]) {
+    background: var(--sd-head-solid) !important;
+}
+
+/* ---------------- 卡片化 ---------------- */
+.sd-card {
+    background: var(--sd-card);
+    border-radius: var(--sd-radius-lg);
+    box-shadow: var(--sd-shadow-card);
+    overflow: hidden;
+}
+
+/* 旧版常见的白底内容块 → 圆角卡片化 */
+[class*="-content"] {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+
+/* 列表项统一 */
+.sd-list {
+    background: var(--sd-card);
+    border-radius: var(--sd-radius-lg);
+    box-shadow: var(--sd-shadow-card);
+    margin: 12px;
+    overflow: hidden;
+}
+
+.sd-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 16px;
+    background: var(--sd-card);
+    border-bottom: 1px solid var(--sd-line);
+    color: var(--sd-text);
+    font-size: 15px;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.sd-list-item:last-child { border-bottom: none; }
+.sd-list-item .sd-li-title { flex: 1; }
+.sd-list-item .sd-li-arrow {
+    width: 8px; height: 8px;
+    border-top: 1.6px solid #C4C9D4;
+    border-right: 1.6px solid #C4C9D4;
+    transform: rotate(45deg);
+    flex-shrink: 0;
+}
+
+/* ---------------- 按钮 ---------------- */
+.sd-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    padding: 0 22px;
+    border: none;
+    border-radius: 8px;
+    background: #1677FF;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 500;
+    box-shadow: none;
+}
+
+.sd-btn-ghost {
+    background: #fff;
+    color: var(--sd-primary);
+    border: 1px solid #D6E4FF;
+    box-shadow: none;
+}
+
+/* ---------------- 顶部搜索栏 ---------------- */
+.sd-searchbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    transition: background .3s ease, box-shadow .3s ease;
+}
+
+.sd-searchbar.scrolled {
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(23, 43, 77, .06);
+}
+
+.sd-searchbar .sd-search-input {
+    flex: 1;
+    height: 38px;
+    background: rgba(255, 255, 255, .92);
+    border-radius: var(--sd-radius-pill);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px;
+    color: var(--sd-text-3);
+    font-size: 14px;
+}
+
+.sd-searchbar.scrolled .sd-search-input {
+    background: #F2F4F8;
+}
+
+.sd-searchbar .sd-scan {
+    width: 26px; height: 26px;
+    flex-shrink: 0;
+    color: #fff;
+}
+
+.sd-searchbar.scrolled .sd-scan { color: var(--sd-primary); }
+
+/* ---------------- 底部导航（与源码 css/nav.css 一致：caidan 位图图标 + 文字） ---------------- */
+.bottom-nav {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: auto !important;
+    bottom: 16px !important;
+    width: calc(100% - 24px) !important;
+    height: 66px !important;
+    min-height: 66px !important;
+    max-height: 66px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-radius: 30px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+    padding: 6px 0 !important;
+    margin: 0 !important;
+    z-index: 99999 !important;
+    overflow: visible !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    clip-path: none !important;
+}
+
+.bottom-nav .nav-item {
+    flex: 1 1 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    text-decoration: none !important;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+}
+
+.bottom-nav .nav-item .nav-icon {
+    width: 22px !important;
+    height: 22px !important;
+    margin: 0 0 3px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: none !important;
+    border-radius: 0 !important;
+}
+
+/* 图标一律用源码位图（选中 *1 / 未选中 *2，由 sdtab.js 切换）
+   原图 56~58 × 56~58，用 object-fit:contain 保证不被拉扁、比例不变 */
+.bottom-nav .nav-item .nav-icon img {
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    object-fit: contain !important;
+}
+
+.bottom-nav .nav-item .nav-text {
+    font-size: 11px !important;
+    color: #999999 !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    white-space: nowrap;
+}
+
+.bottom-nav .nav-item.active .nav-icon {
+    background: none !important;
+    box-shadow: none !important;
+}
+
+.bottom-nav .nav-item.active .nav-text {
+    color: #1e6fff !important;
+    font-weight: 400 !important;
+}
+
+/* ---------------- 公告条（新版白卡+橙喇叭） ---------------- */
+.sd-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 12px 0;
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: var(--sd-radius-pill);
+    box-shadow: var(--sd-shadow-card);
+    color: var(--sd-text);
+    font-size: 13px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.sd-notice .sd-notice-icon {
+    width: 20px; height: 20px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--sd-orange-light);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sd-orange);
+}
+
+/* ---------------- 大横幅卡片（年度汇算） ---------------- */
+.sd-banner {
+    position: relative;
+    margin: 12px;
+    padding: 18px 16px;
+    border-radius: var(--sd-radius-lg);
+    background: linear-gradient(120deg, #EAF3FF 0%, #F7FBFF 60%, #FFF 100%);
+    box-shadow: var(--sd-shadow-card);
+    overflow: hidden;
+}
+
+.sd-banner h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #14304F;
+    margin: 0 0 8px;
+    position: relative;
+    z-index: 2;
+}
+
+.sd-banner p {
+    font-size: 13.5px;
+    color: #5C6B7F;
+    line-height: 1.5;
+    margin: 0 0 14px;
+    max-width: 62%;
+    position: relative;
+    z-index: 2;
+}
+
+.sd-banner .sd-btn { position: relative; z-index: 2; }
+
+/* 叠加服务卡（专项附加扣除） */
+.sd-service-banner {
+    margin: 12px;
+    padding: 16px;
+    border-radius: var(--sd-radius-lg);
+    background: linear-gradient(120deg, #3F86F0 0%, #5C9BF5 55%, #7FB6F8 100%);
+    box-shadow: 0 6px 18px rgba(63, 134, 240, .28);
+    color: #fff;
+}
+
+.sd-service-banner .sd-sb-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.sd-service-banner .sd-sb-head .sd-sb-more {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,.92);
+    text-decoration: none;
+}
+
+.sd-service-banner .sd-sb-tip {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 16px 0 12px;
+}
+
+.sd-service-banner .sd-sb-pill {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: var(--sd-radius-pill);
+    padding: 6px 8px 6px 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
+}
+
+.sd-service-banner .sd-sb-pill .sd-sb-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #3F86F0;
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+}
+
+.sd-service-banner .sd-sb-pill .sd-sb-join {
+    padding: 8px 18px;
+    border-radius: var(--sd-radius-pill);
+    background: linear-gradient(90deg, #3F86F0, #1677FF);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* ---------------- 区块标题 ---------------- */
+.sd-section-title {
+    margin: 20px 14px 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--sd-text);
+}
+
+/* ---------------- 网格（常用服务） ---------------- */
+.sd-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px 0;
+    margin: 0 8px;
+    padding: 14px 4px;
+    background: var(--sd-card);
+    border-radius: var(--sd-radius-lg);
+    box-shadow: var(--sd-shadow-card);
+}
+
+.sd-grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+.sd-grid .sd-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 2px;
+    text-decoration: none;
+    color: var(--sd-text);
+    font-size: 12px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.sd-grid .sd-cell .sd-cell-ico {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #fff;
+}
+
+.sd-grid .sd-cell .sd-cell-txt {
+    text-align: center;
+    line-height: 1.25;
+    color: #414856;
+}
+
+/* 图标底色池 */
+.ico-blue   { background: linear-gradient(140deg,#4E9BFF,#1677FF); }
+.ico-cyan   { background: linear-gradient(140deg,#3FD3D3,#13A8A8); }
+.ico-green  { background: linear-gradient(140deg,#4ADEA8,#00B87C); }
+.ico-orange { background: linear-gradient(140deg,#FFB65C,#FF8A1F); }
+.ico-purple { background: linear-gradient(140deg,#9B7CFF,#6C4BE8); }
+.ico-red    { background: linear-gradient(140deg,#FF8A8A,#F5453D); }
+.ico-gold   { background: linear-gradient(140deg,#FFD666,#F5A623); }
+
+/* ---------------- 我的页 ---------------- */
+.sd-mine-head {
+    position: relative;
+    background: var(--sd-head-mine);
+    padding: calc(22px + env(safe-area-inset-top, 0px)) 16px 64px;
+    color: #fff;
+    border-radius: 0 0 20px 20px;
+}
+
+.sd-mine-avatar {
+    width: 74px; height: 74px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .16);
+    margin: 0 auto 14px;
+}
+
+.sd-mine-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.sd-mine-id {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: rgba(255,255,255,.86);
+}
+
+/* 我的页统计三格 */
+.sd-mine-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: -46px 12px 0;
+    position: relative;
+    z-index: 3;
+}
+
+.sd-mine-stat {
+    background: #fff;
+    border-radius: var(--sd-radius-lg);
+    box-shadow: var(--sd-shadow-card);
+    padding: 14px 6px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    text-decoration: none;
+    color: var(--sd-text);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.sd-mine-stat .sd-stat-ico {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px;
+}
+
+.sd-mine-stat .sd-stat-badge {
+    min-width: 24px;
+    padding: 1px 8px;
+    border-radius: var(--sd-radius-pill);
+    background: var(--sd-primary-light);
+    color: var(--sd-primary);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* 我的页工具条（切换关怀版等） */
+.sd-mine-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px;
+    padding: 12px 14px;
+    background: #fff;
+    border-radius: var(--sd-radius-lg);
+    box-shadow: var(--sd-shadow-card);
+    font-size: 14px;
+    color: var(--sd-text);
+}
+
+/* ---------------- 二级页统一头部（吸顶） ---------------- */
+.sd-page-head {
+    position: sticky;
+    top: 0;
+    z-index: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 12px;
+    background: var(--sd-head-solid);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.sd-page-head .sd-back {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+/* ---------------- 通用元素微调 ---------------- */
+input, textarea, select {
+    font-family: inherit;
+    border-radius: 10px;
+}
+
+button, .btn, [class*="-btn"] {
+    font-family: inherit;
+}
+
+/* 旧版部分页面写死 #2c80f4，统一到新版蓝 */
+a[style*="#2c80f4"], div[style*="background: #2c80f4"] { }
+
+/* ============================================================
+   以下：直接覆盖旧版页面的既有类名，实现 37 页统一换肤
+   ============================================================ */
+
+/* ---------------- 「我的」页（index.html） ---------------- */
+.header-bg {
+    height: 208px !important;
+    background: var(--sd-head-mine) !important;
+    position: relative;
+    border-radius: 0 0 22px 22px;
+    overflow: visible !important;
+}
+
+.header-bg img { display: none !important; }
+
+/* 新版圆形头像（内联 SVG，避免依赖外部图片） */
+.header-bg::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -34px;
+    transform: translateX(-50%);
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, .9);
+    background: #E8F1FF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23EAF3FF'/%3E%3Cstop offset='1' stop-color='%23BFD9FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='41' r='17' fill='%23F7D9BC'/%3E%3Cpath d='M33 40a17 17 0 0 1 34 0c0-7-5-12-17-12s-17 5-17 12z' fill='%23383230'/%3E%3Cpath d='M20 100c0-15 13-25 30-25s30 10 30 25z' fill='%235D8DF6'/%3E%3C/svg%3E") center/cover no-repeat;
+    box-shadow: 0 6px 18px rgba(28, 42, 84, .22);
+    z-index: 6;
+}
+
+.content-wrapper {
+    position: relative;
+    z-index: 5;
+    padding: 0 12px !important;
+    margin-top: -58px;
+}
+
+.user-card {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 6px !important;
+    margin: 0 0 66px !important;
+    position: relative;
+    z-index: 7;
+}
+
+.user-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px;
+}
+
+.user-name {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
+
+.user-id {
+    font-size: 12.5px !important;
+    color: rgba(255, 255, 255, .9) !important;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.user-id svg path { fill: #FFD9A0 !important; }
+
+.personal-info-btn {
+    margin-left: auto;
+    background: linear-gradient(90deg, #FFB758, #FF9A2E) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: var(--sd-radius-pill) !important;
+    padding: 7px 16px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(255, 154, 46, .35) !important;
+    white-space: nowrap;
+}
+
+.personal-info-btn::after { content: ''; }
+
+/* 三格统计卡（新版：白卡 + 彩色图标 + 蓝 badge） */
+.function-cards {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+}
+
+.function-card {
+    background: #fff !important;
+    border-radius: var(--sd-radius-lg) !important;
+    box-shadow: var(--sd-shadow-card) !important;
+    padding: 15px 6px 13px !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 0 !important;
+}
+
+.function-card .function-icon {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 0 8px !important;
+    border-radius: 13px;
+    overflow: hidden;
+    background: var(--sd-primary-light);
+}
+
+.function-card .function-icon img {
+    width: 26px !important;
+    border-radius: 0 !important;
+    filter: saturate(1.15);
+}
+
+.function-title {
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: var(--sd-text) !important;
+    margin-bottom: 8px !important;
+}
+
+/* 「添加 / 1家 / 1张」→ 新版蓝色胶囊 badge */
+.function-btn,
+.function-btn.orange,
+.function-btn.blue {
+    background: var(--sd-primary-light) !important;
+    color: var(--sd-primary) !important;
+    border: none !important;
+    border-radius: var(--sd-radius-pill) !important;
+    padding: 3px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    min-height: 20px;
+    line-height: 1.35;
+}
+
+/* 菜单列表 → 新版白卡 */
+.menu-list {
+    background: #fff !important;
+    border-radius: var(--sd-radius-lg) !important;
+    box-shadow: var(--sd-shadow-card) !important;
+    overflow: hidden;
+    margin: 0 0 14px !important;
+}
+
+.menu-item {
+    padding: 15px 16px !important;
+    border-bottom: 1px solid var(--sd-line) !important;
+    background: #fff;
+}
+
+.menu-item:active { background: #F7F8FB; }
+
+.menu-text {
+    font-size: 15px !important;
+    color: var(--sd-text) !important;
+    font-weight: 500;
+}
+
+.menu-arrow {
+    color: #C4C9D4 !important;
+    font-size: 0 !important;
+    width: 8px;
+    height: 8px;
+    border-top: 1.6px solid #C4C9D4;
+    border-right: 1.6px solid #C4C9D4;
+    transform: rotate(45deg);
+}
+
+.menu-icon img { width: 19px !important; }
+
+.logout-section {
+    background: #fff !important;
+    border-radius: var(--sd-radius-lg) !important;
+    box-shadow: var(--sd-shadow-card) !important;
+    margin: 0 0 14px !important;
+    padding: 15px !important;
+}
+
+.logout-btn {
+    color: #F5453D !important;
+    font-weight: 600 !important;
+    font-size: 15.5px !important;
+}
+
+.page.active { padding-bottom: var(--sd-nav-clearance) !important; }
+
+/* ---------------- 二级页通用：旧蓝头 → 新版头 ---------------- */
+.page-header,
+.header,
+.navbar,
+.top-bar {
+    background: #FFFFFF !important;
+    color: #1A1A1A !important;
+}
+
+/* 旧版大量使用的固定白底内容容器 → 新版本页底色 */
+.page-content,
+.main-content,
+.content,
+.container-fluid {
+    background: transparent;
+}
+
+/* 旧版写死的蓝色按钮 */
+.btn-primary,
+.submit-btn,
+button[type="submit"],
+.save-btn,
+.confirm-btn {
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/* 表单控件统一 */
+input[type="text"], input[type="tel"], input[type="number"],
+input[type="date"], input[type="password"], textarea, select {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    border-radius: 0 !important;
+    color: #1A1A1A !important;
+}
+
+/* ---------------- 二级页头部：标题防溢出 + 新版排版（吸顶） ---------------- */
+.page-header,
+.header,
+.navbar,
+.top-bar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px !important;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    box-shadow: none;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+.page-header .header-title,
+.header .header-title,
+.page-header h1,
+.header h1,
+.navbar .title,
+.top-bar .title {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    color: #1A1A1A !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-align: center;
+}
+
+.page-header .back-btn,
+.header .back-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    flex: 0 0 auto !important;
+    color: #1677FF !important;
+    font-size: 16px !important;
+    opacity: 1;
+}
+
+.page-header .back-icon,
+.header .back-icon {
+    width: 18px !important;
+    height: 18px !important;
+    filter: none;
+}
+
+.page-header .header-link,
+.header .header-link {
+    flex: 0 0 auto !important;
+    color: #1677FF !important;
+    font-size: 14px !important;
+    opacity: 1;
+}
+
+/* 次级标题允许换行但不撑破容器 */
+.tips-title, .section-title, .sd-section-title {
+    word-break: break-word;
+}
+
+/* ---------------- 头部右侧动作（旧类名 .header-right / .header-btn 等） ---------------- */
+.page-header .header-right,
+.header .header-right,
+.page-header .header-btn,
+.header .header-btn,
+.page-header .add-btn,
+.header .add-btn,
+.page-header .save-link,
+.header .save-link {
+    color: #1677FF !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+    opacity: .96;
+    z-index: 5;
+}
+
+/* ---------------- 列表项内部结构兜底（防旧样式/属性选择器误伤） ---------------- */
+.list-item .list-header,
+.card .list-header,
+.list-item .item-header {
+    background: transparent !important;
+    color: var(--sd-text) !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.list-item .list-title {
+    color: var(--sd-text) !important;
+    font-weight: 600 !important;
+}
+
+.list-item .list-date {
+    color: var(--sd-text-weak, #8A94A6) !important;
+    font-weight: 400 !important;
+}
+
+/* 列表项统一成新版白卡 */
+.list-item {
+    background: var(--sd-card, #fff) !important;
+    border-radius: var(--sd-radius-lg) !important;
+    box-shadow: var(--sd-shadow-card) !important;
+    border-bottom: none !important;
+}
+
+/* 文字按钮（编辑/删除）统一色调 */
+.list-actions .link-btn,
+.link-btn { color: var(--sd-primary) !important; text-decoration: none !important; }
+.list-actions .del-btn,
+.del-btn { color: #FF4D4F !important; text-decoration: none !important; }
+
+/* 表单区（旧内联样式）统一 */
+.form-item { border-bottom: 1px solid var(--sd-line, #EFF1F5) !important; }
+.form-label { color: var(--sd-text-weak, #8A94A6) !important; }
+.form-input, .form-select { background: transparent !important; font-size: 15px !important; }
+
+/* ---------------- 旧版容器类兜底：统一成新版卡片（放在文件末尾以保证优先级） ---------------- */
+.menu-container,
+.list-container,
+.info-container,
+.group-container,
+panel-container,
+.card-container,
+.form-container {
+    margin: 12px !important;
+    background: var(--sd-card, #fff) !important;
+    border-radius: var(--sd-radius-lg) !important;
+    box-shadow: var(--sd-shadow-card) !important;
+    overflow: hidden !important;
+}
+
+.menu-container .menu-item,
+.list-container .list-row,
+.info-container .info-item {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+}
+
+.menu-container > .menu-item:first-child,
+.info-container > .info-item:first-child {
+    border-top: none !important;
+}
+
+
+/* SD_GRAD_HEAD_EXCEPTION —— 需要蓝渐变头的页面（如办&查）在 HTML 上加 .sd-grad-head */
+.page-header.sd-grad-head,
+.header.sd-grad-head,
+.navbar.sd-grad-head,
+.top-bar.sd-grad-head {
+    background: var(--sd-head-solid) !important;
+    border-bottom: none !important;
+    box-shadow: 0 2px 10px rgba(23, 43, 77, .08) !important;
+}
+.page-header.sd-grad-head .header-title,
+.header.sd-grad-head .header-title,
+.page-header.sd-grad-head h1,
+.header.sd-grad-head h1 { color: #fff !important; }
+.page-header.sd-grad-head .back-btn,
+.header.sd-grad-head .back-btn,
+.page-header.sd-grad-head .header-link,
+.header.sd-grad-head .header-link,
+.page-header.sd-grad-head .header-right,
+.header.sd-grad-head .header-right { color: #fff !important; }
+.page-header.sd-grad-head .back-icon,
+.header.sd-grad-head .back-icon { filter: brightness(0) invert(1); }
+
+/* ============================================================
+   跨机型屏幕适配层（追加段 2026-10-05）
+   目标：不同手机屏幕尺寸 / 刘海屏 / 手势条 / 折叠屏 → 元素自动调整位置
+   原则：不改变现有视觉；只做「防溢出 + 安全区 + 极限屏兜底」
+   ============================================================ */
+
+/* ---------- 1) 防横向溢出：任何图片/长串都不撑破视口 ---------- */
+html, body { max-width: 100%; overflow-x: hidden !important; }
+img, video, canvas, svg, iframe { max-width: 100%; }
+table { max-width: 100%; word-break: break-word; }
+p, .sd-card, .sd-row, .sd-list, .sd-section { overflow-wrap: break-word; word-break: break-word; }
+
+/* ---------- 2) 底部安全区（手势条 / 虚拟导航栏）：渐进增强，老 WebView 自动忽略 ---------- */
+@supports (bottom: env(safe-area-inset-bottom)) {
+    .bottom-nav { bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
+    body { padding-bottom: calc(var(--sd-nav-clearance) + env(safe-area-inset-bottom, 0px)) !important; }
+}
+
+/* ---------- 3) 极窄屏 <=359px（小屏安卓 / 折叠屏外屏） ---------- */
+@media (max-width: 359px) {
+    :root {
+        --sd-radius: 6px;
+        --sd-radius-lg: 10px;
+        --sd-nav-h: 64px;
+        --sd-nav-clearance: 78px;
+        --bottom-nav-clearance: 78px;
+    }
+    .bottom-nav {
+        left: 10px !important;
+        right: 10px !important;
+        width: calc(100% - 20px) !important;
+        height: 60px !important;
+        min-height: 60px !important;
+        max-height: 60px !important;
+    }
+    .bottom-nav .nav-item .nav-text { font-size: 10px !important; }
+}
+
+/* ---------- 4) 窄屏 360-374px ---------- */
+@media (min-width: 360px) and (max-width: 374px) {
+    :root { --sd-nav-clearance: 82px; --bottom-nav-clearance: 82px; }
+}
+
+/* ---------- 5) 大屏手机 431-599px ---------- */
+@media (min-width: 431px) {
+    :root { --sd-nav-clearance: 90px; --bottom-nav-clearance: 90px; }
+}
+
+/* ---------- 6) 平板 / 折叠屏展开 >=600px：底栏限宽居中，避免拉伸 ---------- */
+@media (min-width: 600px) {
+    .bottom-nav {
+        left: 50% !important;
+        right: auto !important;
+        width: 424px !important;
+        max-width: calc(100% - 32px) !important;
+        transform: translateX(-50%) !important;
+    }
+}
+
+/* ---------- 7) 横屏矮屏（高度 <=430px）：压缩大留白，内容不被切 ---------- */
+@media (max-height: 430px) and (orientation: landscape) {
+    .sd-fullpage, .bancha-page { min-height: auto !important; }
+}
+
+/* ---------- 8) 底部导航高度自适应 + 让位变量（P0-1 补充） ---------- */
+/* 只在「有内容 + 大字体」时自动长高，默认仍是 66px（视觉不变） */
+.bottom-nav { height: auto !important; min-height: 66px !important; max-height: none !important; }
+@supports (bottom: env(safe-area-inset-bottom)) {
+    :root { --bottom-nav-clearance: calc(86px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- 9) 滚动条隐藏（纯视觉，绝不改滚动机制） ----------
+   上一版误加了 html{overflow-y:auto} / -webkit-overflow-scrolling:touch / overscroll-behavior-y:none
+   以及 page-shouye 的 padding 覆写，在 Android WebView 上会导致整页划不动，已全部移除。
+   这里只隐藏滚动条本身，不碰 overflow / overscroll-behavior / 滚动容器。 */
+html, body {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+    background: transparent !important;
+}
