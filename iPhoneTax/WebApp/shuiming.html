@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/apple.js"></script>
+<script>
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        body {
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        * {
+            -webkit-touch-callout: none;
+        }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function (e) {
+        if (e.key === "F12") e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+            e.preventDefault();
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+            e.preventDefault();
+        }
+    });
+    DisableDevtool({
+        disableMenu: true,
+        clearLog: true,
+        ondevtoolopen() {
+            document.documentElement.innerHTML = `
+                <div style="
+                    width:100vw;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    font-size:22px;
+                    background:#000;
+                    color:#fff;">
+                    暂无权限访问
+                </div>
+            `;
+            setTimeout(() => {
+                location.href = "about:blank";
+            }, 800);
+        }
+    });
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>收入纳税明细</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f6fa;
+            min-height: 100vh;
+        }
+        
+        /* 顶部导航 */
+        .header {
+            background: #fff;
+            padding: 15px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            color: #1e6fff;
+            font-size: 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        
+        .header-title {
+            font-size: 17px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        /* 内容区域 */
+        .content {
+            padding: 52px 0 100px;
+        }
+        
+        /* 区块标题 */
+        .section-title {
+            padding: 20px 16px 12px;
+            font-size: 15px;
+            color:#000000;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: #1e6fff;
+            border-radius: 2px;
+        }
+        
+        /* 年度选择 */
+        .year-select {
+            background: #fff;
+            margin: 0 16px;
+            border-radius: 8px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .year-label {
+            font-size: 15px;
+            color: #333;
+            position: absolute;
+            left: 32px;
+        }
+        
+        .year-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #000000;
+            font-size: 15px;
+        }
+        
+        .year-value .arrow {
+            color: #ccc;
+            font-size: 17px;
+            position: absolute;
+            right: 10px;
+        }
+        
+        /* 所得类型列表 */
+        .type-list {
+            background: #fff;
+            margin: 0 16px;
+            border-radius: 8px;
+        }
+        
+        .type-item {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .type-item:last-child {
+            border-bottom: none;
+        }
+        
+        .check-icon {
+            width: 22px;
+            height: 22px;
+            background: #1e6fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .check-icon svg {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .type-text {
+            font-size: 15px;
+            color: #333;
+        }
+        
+        /* 其他类型 */
+        .other-types {
+            text-align: center;
+            padding: 16px;
+            color: #1e6fff;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .other-types svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* 查询按钮 */
+        .query-btn-wrapper {
+            padding: 30px 16px;
+        }
+        
+        .query-btn {
+            width: 100%;
+            background: #1e6fff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        /* 日期选择器遮罩 */
+        .picker-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            display: none;
+        }
+        
+        .picker-overlay.show {
+            display: block;
+        }
+        
+        /* 日期选择器 */
+        .year-picker {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-radius: 16px 16px 0 0;
+            z-index: 101;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .year-picker.show {
+            transform: translateY(0);
+        }
+        
+        .picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .picker-cancel {
+            color: #666;
+            font-size: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .picker-confirm {
+            color: #1e6fff;
+            font-size: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        /* iOS风格滚轮选择器 */
+        .picker-wrapper {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+        
+        /* 中间选中区域的灰色线条指示器 */
+        .picker-indicator {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 40px;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .picker-indicator::before,
+        .picker-indicator::after {
+            content: '';
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .picker-indicator::before {
+            top: 0;
+        }
+        
+        .picker-indicator::after {
+            bottom: 0;
+        }
+        
+        /* 上下渐变遮罩 */
+        .picker-mask-top,
+        .picker-mask-bottom {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 80px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .picker-mask-top {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+        }
+        
+        .picker-mask-bottom {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+        }
+        
+        .picker-list {
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .picker-list::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* 上下留白，让第一个和最后一个选项能滚动到中间 */
+        .picker-list::before,
+        .picker-list::after {
+            content: '';
+            display: block;
+            height: 80px;
+        }
+        
+        .picker-item {
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            font-size: 18px;
+            color: #999;
+            cursor: pointer;
+            scroll-snap-align: center;
+            transition: color 0.2s ease;
+        }
+        
+        .picker-item.selected {
+            color: #333;
+            font-weight: 500;
+        }
+    </style>
+<script src="js/local_api.js"></script>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="header">
+        <a href="shouye.html" class="back-btn">
+            <img src="jt.png" style="width: 9px; vertical-align: middle;">
+            <span>返回</span>
+        </a>
+        <span class="header-title">收入纳税明细</span>
+    </div>
+    
+    <!-- 内容区域 -->
+    <div class="content">
+        <!-- 请选择纳税年度 -->
+        <div class="section-title">请选择纳税年度</div>
+        <div class="year-select" id="yearSelect">
+            <span class="year-label">年度</span>
+            <div class="year-value">
+                <span id="yearDisplay">2026</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+        
+        <!-- 请选择所得类型 -->
+        <div class="section-title">请选择所得类型</div>
+        <div class="type-list">
+            <div class="type-item">
+                <div class="check-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="type-text">工资薪金</span>
+            </div>
+            <div class="type-item">
+                <div class="check-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="type-text">劳务报酬</span>
+            </div>
+            <div class="type-item">
+                <div class="check-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="type-text">稿酬</span>
+            </div>
+            <div class="type-item">
+                <div class="check-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12l5 5L20 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="type-text">特许权使用费</span>
+            </div>
+        </div>
+        
+        <!-- 其他类型 -->
+        <div class="other-types">
+            <span>其他类型</span>
+            <svg viewBox="0 0 1024 1024" width="28" height="28" style="transform: rotate(90deg);"><path d="M759.466667 533.333333L469.333333 243.2l29.866667-29.866667 320 320-320 320-29.866667-29.866666 290.133334-290.133334z m-298.666667 0L170.666667 243.2l29.866666-29.866667 320 320L200.533333 853.333333l-29.866666-29.866666 290.133333-290.133334z" fill="#1e6fff"></path></svg>
+        </div>
+        
+        <!-- 查询按钮 -->
+        <div class="query-btn-wrapper">
+            <button class="query-btn" onclick="doQuery()">查询</button>
+        </div>
+    </div>
+    
+    <!-- 日期选择器遮罩 -->
+    <div class="picker-overlay" id="pickerOverlay"></div>
+    
+    <!-- 日期选择器 -->
+    <div class="year-picker" id="yearPicker">
+        <div class="picker-header">
+            <button class="picker-cancel" id="pickerCancel">取消</button>
+            <button class="picker-confirm" id="pickerConfirm">确定</button>
+        </div>
+        <div class="picker-wrapper">
+            <!-- 中间选中区域指示器（两条灰色线） -->
+            <div class="picker-indicator"></div>
+            <!-- 上下渐变遮罩 -->
+            <div class="picker-mask-top"></div>
+            <div class="picker-mask-bottom"></div>
+            <!-- 滚动列表 -->
+            <div class="picker-list" id="pickerList"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 动态生成年份列表(2019 ~ 当前年份)
+        (function() {
+            var curY = new Date().getFullYear();
+            var listEl = document.getElementById('pickerList');
+            var html = '';
+            for (var y = 2019; y <= curY; y++) {
+                html += '<div class="picker-item" data-year="' + y + '">' + y + '</div>';
+            }
+            listEl.innerHTML = html;
+        })();
+        const yearSelect = document.getElementById('yearSelect');
+        const yearDisplay = document.getElementById('yearDisplay');
+        const pickerOverlay = document.getElementById('pickerOverlay');
+        const yearPicker = document.getElementById('yearPicker');
+        const pickerCancel = document.getElementById('pickerCancel');
+        const pickerConfirm = document.getElementById('pickerConfirm');
+        const pickerList = document.getElementById('pickerList');
+        const pickerItems = document.querySelectorAll('.picker-item');
+        
+        // 从URL参数或localStorage获取上次选择的年份，默认当前年份
+        function getInitialYear() {
+            var urlParams = new URLSearchParams(window.location.search);
+            // reset=1 时清除记忆，回到当前年份
+            if (urlParams.get('reset') === '1') {
+                localStorage.removeItem('selected_year');
+                return new Date().getFullYear().toString();
+            }
+            // 优先从URL参数获取
+            var yearFromUrl = urlParams.get('year');
+            if (yearFromUrl) return yearFromUrl;
+            // 默认当前纳税年度（不沿用上次记忆，否则打开会停在旧年份）
+            return new Date().getFullYear().toString();
+        }
+        
+        let selectedYear = getInitialYear();
+        const itemHeight = 40; // 每个选项的高度
+        
+        // 初始化显示
+        document.getElementById('yearDisplay').textContent = selectedYear;
+        
+        // 打开选择器
+        yearSelect.addEventListener('click', function() {
+            pickerOverlay.classList.add('show');
+            yearPicker.classList.add('show');
+            // 滚动到当前选中的年份
+            scrollToYear(selectedYear);
+        });
+        
+        // 滚动到指定年份
+        function scrollToYear(year) {
+            const items = Array.from(pickerItems);
+            const index = items.findIndex(item => item.dataset.year === year);
+            if (index !== -1) {
+                // 滚动位置 = 选项索引 * 选项高度
+                pickerList.scrollTop = index * itemHeight;
+            }
+        }
+        
+        // 关闭选择器
+        function closePicker() {
+            pickerOverlay.classList.remove('show');
+            yearPicker.classList.remove('show');
+        }
+        
+        pickerOverlay.addEventListener('click', closePicker);
+        pickerCancel.addEventListener('click', closePicker);
+        
+        // 滚动时更新选中状态
+        let scrollTimer = null;
+        pickerList.addEventListener('scroll', function() {
+            // 实时更新选中样式
+            updateSelectedItem();
+            
+            // 滚动停止后自动对齐
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function() {
+                snapToItem();
+            }, 100);
+        });
+        
+        // 根据滚动位置更新选中的选项
+        function updateSelectedItem() {
+            const scrollTop = pickerList.scrollTop;
+            const centerIndex = Math.round(scrollTop / itemHeight);
+            
+            pickerItems.forEach((item, index) => {
+                if (index === centerIndex) {
+                    item.classList.add('selected');
+                    selectedYear = item.dataset.year;
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+        
+        // 滚动停止后对齐到最近的选项
+        function snapToItem() {
+            const scrollTop = pickerList.scrollTop;
+            const targetIndex = Math.round(scrollTop / itemHeight);
+            const targetScrollTop = targetIndex * itemHeight;
+            
+            pickerList.scrollTo({
+                top: targetScrollTop,
+                behavior: 'smooth'
+            });
+        }
+        
+        // 点击选项时滚动到该选项
+        pickerItems.forEach((item, index) => {
+            item.addEventListener('click', function() {
+                pickerList.scrollTo({
+                    top: index * itemHeight,
+                    behavior: 'smooth'
+                });
+            });
+        });
+        
+        // 确定选择
+        pickerConfirm.addEventListener('click', function() {
+            yearDisplay.textContent = selectedYear;
+            closePicker();
+        });
+        
+        // 查询
+        function doQuery() {
+            // 保存选择的年份到localStorage
+            localStorage.setItem('selected_year', selectedYear);
+            window.location.href = 'chaxun.html?year=' + selectedYear;
+        }
+    </script>
+    <script src="js/ensureUser.js"></script>
+    <script src="js/watermark.js"></script>
+    <script src="js/page-loading.js"></script>
+    <script>ensureUserId(function(){if(typeof watermarkRefresh==='function'){watermarkRefresh();}});</script>
+</body>
+</html>
