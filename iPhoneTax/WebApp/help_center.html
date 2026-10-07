@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>帮助中心 · 修改首页</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f6fa; min-height: 100vh; }
+/* 二级页 header（与 zixun.html / gerenxinxi_menu.html 同写法，最终外观由下方 sd-spec 层统一） */
+.header { background: #fff; padding: 15px 16px; display: flex; align-items: center; position: relative; border-bottom: 1px solid #f0f0f0; }
+.back-btn { position: absolute; left: 16px; color: #1677FF; font-size: 16px; text-decoration: none; }
+.header-title { font-size: 17px; font-weight: 500; color: #333; margin: 0 auto; }
+.content { padding: 16px; }
+
+/* ===== 卡片 ===== */
+.card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.card-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+/* ===== 首页预览区 =====
+   1080 × 2774 的宽高比：aspect-ratio = 0.3893294881038212（= 1080/2774），
+   高/宽 = 2.568517…，因此 padding-top: 256.852% 是等价的兼容写法（老 WebView 无 aspect-ratio）。 */
+.hc-preview-wrap {
+    position: relative; width: 100%; height: 0; padding-top: 256.852%;
+    background: #f5f5f5; border-radius: 8px; overflow: hidden; margin-bottom: 16px;
+    touch-action: pan-y;
+}
+@supports (aspect-ratio: 1 / 1) {
+    .hc-preview-wrap {
+        height: auto; padding-top: 0; aspect-ratio: 0.3893294881038212;
+        /* 首屏可用高度反推预览宽度，保证「上传替换 / 恢复默认」落在第一屏内；
+           容器宽高比仍严格等于图片比例（1080:2774），热区百分比定位不受影响 */
+        width: min(100%, calc((100vh - 300px) * 0.3893294881038212));
+        margin-left: auto; margin-right: auto;
+    }
+}
+@supports (height: 100dvh) {
+    .hc-preview-wrap { width: min(100%, calc((100dvh - 300px) * 0.3893294881038212)); }
+}
+/* 横屏或视口过矮（<=480px）时回退到 padding-top 等比，避免宽度被算成 0 而整块消失 */
+@media (orientation: landscape), (max-height: 480px) {
+    .hc-preview-wrap {
+        height: 0 !important; padding-top: 256.852% !important;
+        width: 100% !important; aspect-ratio: auto !important;
+        margin-left: 0 !important; margin-right: 0 !important;
+    }
+}
+.hc-preview-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; object-fit: fill; }
+/* 热区层：默认隐藏，进入「调整热区」后显示 */
+.hc-hotspots { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; }
+.hc-hotspots.on { display: block; }
+.hc-hs {
+    position: absolute; border: 1px solid #ff0000; border-radius: 4px; padding: 2px 3px;
+    font-size: 11px; font-weight: 600; line-height: 1.2; overflow: hidden;
+    touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.hc-hs.sel { border-width: 2px; z-index: 10; }
+
+/* ===== 图片信息四宫格（对应新版 infoGrid） ===== */
+.hc-info { display: flex; flex-wrap: wrap; margin: 0 -6px 12px; }
+.hc-info-item { width: 50%; padding: 8px 6px; }
+.hc-info-label { font-size: 13px; color: #999; margin-bottom: 4px; }
+.hc-info-val { font-size: 15px; color: #333; font-weight: 500; }
+.hc-info-val.hc-custom { color: #e67e22; }
+.hc-info-val.hc-default { color: #27ae60; }
+
+/* ===== 按钮 ===== */
+.hc-btn-row { display: flex; flex-wrap: wrap; }
+.hc-btn {
+    flex: 1 1 auto; display: flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 12px 16px; margin-right: 12px; margin-bottom: 4px;
+    border: none; border-radius: 8px; font-size: 15px; font-weight: 500; font-family: inherit;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.hc-btn:last-child { margin-right: 0; }
+.hc-btn-primary { background: #1677FF; color: #fff; }
+.hc-btn-ghost { background: #fff; color: #1677FF; border: 1px solid #1677FF; }
+.hc-btn-danger { background: #fdf0ef; color: #e74c3c; border: 1px solid #f5c6c2; }
+.hc-btn-grey { background: #f5f5f5; color: #666; }
+
+/* ===== 热区读数列表 ===== */
+.hc-hs-list { list-style: none; border-top: 1px solid #F0F0F0; }
+.hc-hs-list li { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #F0F0F0; font-size: 13px; }
+.hc-hs-dot { width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; flex: 0 0 auto; }
+.hc-hs-name { width: 62px; flex: 0 0 auto; color: #333; font-weight: 500; }
+.hc-hs-val { flex: 1; color: #666; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ===== 提示文案 ===== */
+.hc-tip { font-size: 12px; color: #999; line-height: 18px; padding-top: 8px; }
+.hc-footer { display: flex; margin-top: 14px; }
+
+/* ===== 「高级」折叠区（默认收起，只保留必要操作在第一屏） ===== */
+.hc-adv { margin-top: 14px; border-top: 1px solid #F0F0F0; }
+.hc-adv > summary {
+    list-style: none; cursor: pointer; padding: 14px 0 2px; font-size: 14px; font-weight: 500;
+    color: #1677FF; -webkit-tap-highlight-color: transparent; outline: none;
+}
+.hc-adv > summary::-webkit-details-marker { display: none; }
+.hc-adv > summary::after { content: '展开 ▾'; float: right; color: #9AA1AE; font-size: 12px; font-weight: 400; }
+.hc-adv[open] > summary::after { content: '收起 ▴'; }
+.hc-adv-sec { padding-top: 4px; }
+.hc-sub { font-size: 14px; font-weight: 600; color: #1A1A1A; margin: 10px 0 10px; }
+.hc-hr { height: 1px; background: #F0F0F0; margin: 12px 0; }
+
+/* ===== toast ===== */
+.hc-toast {
+    position: fixed; left: 50%; bottom: 120px; transform: translate(-50%, 10px);
+    background: rgba(0, 0, 0, 0.78); color: #fff; font-size: 14px; padding: 10px 18px;
+    border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 2000;
+}
+.hc-toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- ===== sd-spec 视觉对齐层（只覆盖外观，不改任何功能/逻辑/文案） ===== -->
+<style id="sd-spec-override">
+/* 二级页 header —— SPEC §3：白底 / 1px #F0F0F0 下边线 / 标题 18px 600 #1A1A1A / 返回 16px #1677FF */
+body .header{background:#FFFFFF!important;color:#1A1A1A!important;border-bottom:1px solid #F0F0F0!important;box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:0!important;padding:12px 16px!important;position:sticky!important;top:0!important;z-index:900!important}
+body .header::after{content:''!important;flex:0 0 70px;width:70px;min-width:70px}
+body .header .back-btn{position:static!important;left:auto!important;right:auto!important;flex:0 0 70px!important;width:70px;display:flex!important;align-items:center!important;gap:2px!important;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important;line-height:1.2!important;background:none!important;border:none!important}
+body .header .header-title{flex:1 1 auto!important;min-width:0!important;margin:0!important;text-align:center!important;font-size:18px!important;font-weight:600!important;color:#1A1A1A!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 页面底色 + 底部胶囊导航留白（SPEC §1 TabBarChrome.height = 86） */
+html,body{background:#F5F6FA!important}
+body{padding-bottom:86px!important}
+/* 内容区（SPEC §4 scrollContent） */
+.content{padding:16px!important;padding-bottom:24px!important}
+/* 卡片（SPEC §4 card） */
+.card{background:#FFFFFF!important;border-radius:12px!important;padding:16px!important;margin:0 0 12px!important;box-shadow:none!important}
+.card-title{font-size:16px!important;font-weight:600!important;color:#1A1A1A!important;margin-bottom:12px!important}
+/* 本页：预览区留白与圆角对齐白卡规范 */
+.hc-preview-wrap{background:#F5F6FA!important;border-radius:8px!important;margin-bottom:16px!important}
+.hc-tip{font-size:12px!important;color:#9AA1AE!important;line-height:18px!important}
+.hc-info-label{font-size:13px!important;color:#9AA1AE!important}
+.hc-info-val{font-size:15px!important;color:#1A1A1A!important}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <a href="index.html" class="back-btn">‹ 返回</a>
+    <div class="header-title">帮助中心 · 修改首页</div>
+</div>
+<div class="content">
+
+    <!-- ===== 卡片：首页背景图片（第一屏只留「上传替换」+「恢复默认」） ===== -->
+    <div class="card">
+        <div class="card-title">首页背景图片</div>
+
+        <div class="hc-preview-wrap" id="hcWrap">
+            <img id="hcBg" class="hc-preview-img" src="home_logged_in_v3.png" alt="首页预览">
+            <div class="hc-hotspots" id="hcLayer"></div>
+        </div>
+
+        <div class="hc-btn-row">
+            <button class="hc-btn hc-btn-primary" id="hcUploadBtn" type="button">上传替换</button>
+            <button class="hc-btn hc-btn-grey" id="hcResetAllBtn" type="button">恢复默认</button>
+        </div>
+        <input type="file" id="hcFile" accept="image/*" style="display:none">
+
+        <div class="hc-tip">提示：上传的图片将保存到本地，仅在本设备生效。建议使用 1080 宽度的竖屏长图以获得最佳显示效果。</div>
+
+        <!-- ===== 高级（默认收起）：图片信息 / 调整热区 / 保存配置 / 仅恢复图片 ===== -->
+        <details class="hc-adv">
+            <summary>高级</summary>
+
+            <div class="hc-adv-sec">
+                <div class="hc-sub">图片信息</div>
+                <div class="hc-info">
+                    <div class="hc-info-item">
+                        <div class="hc-info-label">图片来源</div>
+                        <div class="hc-info-val hc-default" id="hcSource">默认内容</div>
+                    </div>
+                    <div class="hc-info-item">
+                        <div class="hc-info-label">像素尺寸</div>
+                        <div class="hc-info-val" id="hcSize">加载中…</div>
+                    </div>
+                    <div class="hc-info-item">
+                        <div class="hc-info-label">文件大小</div>
+                        <div class="hc-info-val" id="hcBytes">加载中…</div>
+                    </div>
+                    <div class="hc-info-item">
+                        <div class="hc-info-label">分辨率</div>
+                        <div class="hc-info-val" id="hcDpi">未标注</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hc-hr"></div>
+
+            <div class="hc-adv-sec">
+                <div class="hc-sub">热区调整</div>
+                <div class="hc-btn-row">
+                    <button class="hc-btn hc-btn-ghost" id="hcEditBtn" type="button">调整热区</button>
+                    <button class="hc-btn hc-btn-danger" id="hcResetImgBtn" type="button" style="display:none">仅恢复图片</button>
+                </div>
+                <div class="hc-tip" id="hcTip">提示：点击「调整热区」后可拖动色块调整位置。</div>
+                <ul class="hc-hs-list" id="hcList"></ul>
+                <div class="hc-tip">拖动色块调整热区位置：上下不越界（top 0~95%），左右受限于 left 0~80%。</div>
+                <div class="hc-footer">
+                    <button class="hc-btn hc-btn-primary" id="hcSaveBtn" type="button">保存配置</button>
+                </div>
+            </div>
+        </details>
+    </div>
+
+</div>
+
+<div class="hc-toast" id="hcToast"></div>
+
+<script src="js/page-loading.js"></script>
+    <nav class="bottom-nav"></nav>
+    <script src="js/home_custom.js"></script>
+    <script>
+    /* ============================================================
+       「修改首页」页面逻辑（原生 JS，无第三方库）
+       存储：localStorage['geshui_custom_home_image']  ← 图片（dataURL / 路径字符串）
+             localStorage['geshui_custom_hotspots']   ← 热区 JSON（8 键，与新版同名同结构）
+       读写全部走 js/home_custom.js（window.HomeCustom）
+       ============================================================ */
+    (function () {
+        'use strict';
+
+        var HC = window.HomeCustom;
+        var DEFAULT_IMAGE_BYTES = 1145597;   // assets/home_logged_in_v3.png 实测字节数（换图请同步此常量）
+
+        var el = {
+            wrap: document.getElementById('hcWrap'),
+            bg: document.getElementById('hcBg'),
+            layer: document.getElementById('hcLayer'),
+            list: document.getElementById('hcList'),
+            source: document.getElementById('hcSource'),
+            size: document.getElementById('hcSize'),
+            bytes: document.getElementById('hcBytes'),
+            dpi: document.getElementById('hcDpi'),
+            uploadBtn: document.getElementById('hcUploadBtn'),
+            editBtn: document.getElementById('hcEditBtn'),
+            resetImgBtn: document.getElementById('hcResetImgBtn'),
+            resetAllBtn: document.getElementById('hcResetAllBtn'),
+            saveBtn: document.getElementById('hcSaveBtn'),
+            file: document.getElementById('hcFile'),
+            tip: document.getElementById('hcTip'),
+            toast: document.getElementById('hcToast')
+        };
+
+        var state = { editing: false };
+
+        /* 内存热区表：默认值 + 存储命中（缺键回落默认）——拖动只改这份副本，保存才落盘 */
+        var positions = HC.getHotspotsOrDefault();
+
+        /* ---------- 工具 ---------- */
+        function toast(msg) {
+            el.toast.textContent = msg;
+            el.toast.className = 'hc-toast show';
+            clearTimeout(toast._t);
+            toast._t = setTimeout(function () { el.toast.className = 'hc-toast'; }, 1600);
+        }
+        function fmtBytes(n) {
+            if (!n || n <= 0) return '—';
+            if (n < 1024) return n + ' B';
+            if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+            return (n / 1024 / 1024).toFixed(2) + ' MB';
+        }
+        /* dataURL 的原始字节数（base64 → 字节，扣掉 padding） */
+        function dataUrlBytes(u) {
+            var i = String(u).indexOf(',');
+            if (i < 0) return 0;
+            var b = String(u).substring(i + 1);
+            var pad = 0;
+            if (b.charAt(b.length - 1) === '=') pad++;
+            if (b.charAt(b.length - 2) === '=') pad++;
+            return Math.floor(b.length * 3 / 4) - pad;
+        }
+
+        /* ---------- 1. 热区层渲染 ---------- */
+        function renderLayer() {
+            var html = '', i, d;
+            for (i = 0; i < HC.HOTSPOT_DEFS.length; i++) {
+                d = HC.HOTSPOT_DEFS[i];
+                html += '<div class="hc-hs" data-key="' + d.key + '" style="background:' + d.color +
+                        ';border-color:' + d.border + ';color:' + d.border + '">' + d.label + '</div>';
+            }
+            el.layer.innerHTML = html;
+            for (i = 0; i < HC.HOTSPOT_DEFS.length; i++) {
+                bindDrag(el.layer.querySelector('[data-key="' + HC.HOTSPOT_DEFS[i].key + '"]'), HC.HOTSPOT_DEFS[i].key);
+            }
+            syncLayer();
+            renderList();
+        }
+        function applyRectToNode(key, rect) {
+            var node = el.layer.querySelector('[data-key="' + key + '"]');
+            if (!node) return;
+            var p = rect || {};
+            node.style.top = (p.top !== undefined ? p.top : 0) + '%';
+            node.style.left = ((p.left !== undefined ? p.left : HC.FALLBACK.LEFT)) + '%';
+            node.style.width = ((p.width !== undefined ? p.width : HC.FALLBACK.WIDTH)) + '%';
+            node.style.height = (p.height !== undefined ? p.height : 0) + '%';
+        }
+        function syncLayer() {
+            for (var i = 0; i < HC.HOTSPOT_KEYS.length; i++) applyRectToNode(HC.HOTSPOT_KEYS[i], positions[HC.HOTSPOT_KEYS[i]]);
+        }
+        function renderList() {
+            var html = '', i, d, p, txt;
+            for (i = 0; i < HC.HOTSPOT_DEFS.length; i++) {
+                d = HC.HOTSPOT_DEFS[i];
+                p = positions[d.key] || {};
+                txt = 'top ' + fmtPct(p.top) + ' · left ' + fmtPct(p.left !== undefined ? p.left : HC.FALLBACK.LEFT) +
+                      ' · w ' + fmtPct(p.width !== undefined ? p.width : HC.FALLBACK.WIDTH) +
+                      ' · h ' + fmtPct(p.height);
+                html += '<li><span class="hc-hs-dot" style="background:' + d.border + '"></span>' +
+                        '<span class="hc-hs-name">' + d.label + '</span>' +
+                        '<span class="hc-hs-val">' + txt + '</span></li>';
+            }
+            el.list.innerHTML = html;
+        }
+        function fmtPct(v) { return (v === undefined || v === null) ? '—' : (Math.round(Number(v) * 10) / 10) + '%'; }
+
+        /* ---------- 2. 拖动（Pointer Events：pointerdown/move/up，含触摸） ---------- */
+        function select(key) {
+            var nodes = el.layer.querySelectorAll('.hc-hs'), i;
+            for (i = 0; i < nodes.length; i++) {
+                var on = nodes[i].getAttribute('data-key') === key;
+                if (on) nodes[i].className = 'hc-hs sel'; else nodes[i].className = 'hc-hs';
+            }
+        }
+        function mergeRect(cur, delta) {
+            /* 合并语义：只覆盖 move() 返回的键（top[, left]），保留 width/height。
+               注：新版伪码（hotspots.tsx:116）是 { top, left } 整体替换，会丢 width/height。 */
+            var out = {}, k;
+            for (k in cur) { if (Object.prototype.hasOwnProperty.call(cur, k)) out[k] = cur[k]; }
+            for (k in delta) { if (Object.prototype.hasOwnProperty.call(delta, k)) out[k] = delta[k]; }
+            return out;
+        }
+        /* 拖动：优先 Pointer Events，无 PointerEvent 的内核回退到 touch 事件。
+           move/up 挂在 document 上（配合 setPointerCapture 兜底），拖出色块也能继续跟随；
+           每次 move 都从 drag.start 重算，天然幂等，不会被重复监听重复累加。 */
+        function bindDrag(node, key) {
+            if (!node) return;
+            var drag = null;
+            var usePointer = !!window.PointerEvent;
+            var MOVE_EV = usePointer ? 'pointermove' : 'touchmove';
+            var END_EV = usePointer ? 'pointerup' : 'touchend';
+            var CANCEL_EV = usePointer ? 'pointercancel' : 'touchcancel';
+
+            function onMove(e) {
+                if (!drag) return;
+                var x, y, t;
+                if (usePointer) {
+                    if (e.pointerId !== drag.id) return;
+                    x = e.clientX; y = e.clientY;
+                } else {
+                    t = (e.touches && e.touches.length) ? e.touches[0] : (e.changedTouches && e.changedTouches[0]);
+                    if (!t) return;
+                    x = t.clientX; y = t.clientY;
+                }
+                if (e.cancelable && e.preventDefault) e.preventDefault();
+                var dy = y - drag.y, dx = x - drag.x;
+                if (!drag.moved && Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+                drag.moved = true;
+                /* 坐标换算：像素位移 → 相对预览容器的百分比（容器宽高 = 图片实际显示宽高） */
+                var next = HC.move(drag.start, dy / drag.h * 100, dx / drag.w * 100);
+                positions[drag.key] = mergeRect(drag.start, next);
+                applyRectToNode(drag.key, positions[drag.key]);
+            }
+            function onEnd(e) {
+                if (!drag) return;
+                if (usePointer && e.pointerId !== undefined && e.pointerId !== drag.id) return;
+                document.removeEventListener(MOVE_EV, onMove, false);
+                document.removeEventListener(END_EV, onEnd, false);
+                document.removeEventListener(CANCEL_EV, onEnd, false);
+                if (usePointer) { try { node.releasePointerCapture(drag.id); } catch (err) { /* ignore */ } }
+                drag = null;
+                renderList();   /* 拖动结束：读数刷新（落盘由「保存配置」负责） */
+            }
+            function begin(x, y, id) {
+                var r = el.wrap.getBoundingClientRect();
+                drag = {
+                    id: id, key: key, x: x, y: y,
+                    w: (r.width > 0 ? r.width : 1), h: (r.height > 0 ? r.height : 1),
+                    start: positions[key] || {}, moved: false
+                };
+                select(key);
+                document.addEventListener(MOVE_EV, onMove, false);
+                document.addEventListener(END_EV, onEnd, false);
+                document.addEventListener(CANCEL_EV, onEnd, false);
+            }
+
+            if (usePointer) {
+                node.addEventListener('pointerdown', function (e) {
+                    if (!state.editing) return;
+                    if (e.button !== undefined && e.button !== 0) return;
+                    if (e.cancelable && e.preventDefault) e.preventDefault();
+                    try { node.setPointerCapture(e.pointerId); } catch (err) { /* 老内核忽略 */ }
+                    begin(e.clientX, e.clientY, e.pointerId);
+                }, false);
+            } else {
+                node.addEventListener('touchstart', function (e) {
+                    if (!state.editing) return;
+                    var t = e.touches && e.touches[0];
+                    if (!t) return;
+                    begin(t.clientX, t.clientY, t.identifier);
+                }, false);
+            }
+        }
+
+        /* ---------- 3. 编辑模式 ---------- */
+        function setEditing(on) {
+            state.editing = !!on;
+            if (state.editing) el.layer.className = 'hc-hotspots on'; else el.layer.className = 'hc-hotspots';
+            el.editBtn.textContent = state.editing ? '完成调整' : '调整热区';
+            el.tip.textContent = state.editing ? '拖动色块调整热区位置，选中后可微调。' : '提示：点击「调整热区」后可拖动色块调整位置。';
+            if (state.editing) toast('拖动色块调整热区位置');
+        }
+        el.editBtn.addEventListener('click', function () { setEditing(!state.editing); });
+
+        /* ---------- 4. 上传替换（FileReader → canvas 压缩 → localStorage） ---------- */
+        el.uploadBtn.addEventListener('click', function () { el.file.click(); });
+        el.file.addEventListener('change', function () {
+            var f = this.files && this.files[0];
+            this.value = '';
+            if (!f) return;
+            if (f.type && String(f.type).indexOf('image/') !== 0) { toast('请选择图片文件'); return; }
+            if (!window.FileReader) { toast('当前浏览器不支持本地选图'); return; }
+            var fr = new FileReader();
+            fr.onload = function () { compressToJpeg(fr.result, 1080, 0.85, [0.7, 0.5, 0.35]); };
+            fr.onerror = function () { toast('图片读取失败'); };
+            fr.readAsDataURL(f);
+        });
+
+        /* 压到宽 ≤1080 的 JPEG：quality 0.85；写入超限时按 fallback 依次降质重试 */
+        function compressToJpeg(dataUrl, maxW, quality, fallbackList) {
+            var im = new Image();
+            im.onload = function () {
+                var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
+                if (!w || !h) { toast('图片解析失败'); return; }
+                var tw = Math.min(w, maxW), th = Math.round(h * tw / w);
+                var c = document.createElement('canvas');
+                c.width = tw; c.height = th;
+                var ctx = c.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';                 /* JPEG 无透明通道，先衬白底 */
+                ctx.fillRect(0, 0, tw, th);
+                ctx.drawImage(im, 0, 0, tw, th);
+                var out;
+                try { out = c.toDataURL('image/jpeg', quality); }
+                catch (e) { toast('图片处理失败'); return; }
+                var res = HC.setImage(out);
+                if (!res || !res.ok) {
+                    var list = fallbackList || [];
+                    if (list.length) { compressToJpeg(dataUrl, maxW, list[0], list.slice(1)); return; }
+                    toast('图片过大，保存失败，请换一张更小的图片');
+                    return;
+                }
+                loadPreview(out);
+                toast('首页图片已替换');
+            };
+            im.onerror = function () { toast('图片解析失败'); };
+            im.src = dataUrl;
+        }
+
+        /* ---------- 5. 预览与信息 ---------- */
+        function loadPreview(url) {
+            el.bg.onload = function () { updateInfo(); };
+            el.bg.onerror = function () { toast('首页图片加载失败'); };
+            el.bg.src = url;
+            if (el.bg.complete) updateInfo();
+        }
+        function updateInfo() {
+            var custom = HC.getImage();
+            el.source.textContent = custom ? '已替换' : '默认内容';
+            el.source.className = 'hc-info-val ' + (custom ? 'hc-custom' : 'hc-default');
+            var w = el.bg.naturalWidth || 0, h = el.bg.naturalHeight || 0;
+            el.size.textContent = (w && h) ? (w + ' × ' + h) : '—';
+            el.bytes.textContent = fmtBytes(custom ? dataUrlBytes(custom) : DEFAULT_IMAGE_BYTES);
+            el.dpi.textContent = '未标注';
+            if (el.resetImgBtn) el.resetImgBtn.style.display = custom ? 'block' : 'none';
+        }
+
+        /* ---------- 6. 恢复默认 / 保存配置 ---------- */
+        /* 6.1 只恢复图片（同新版 index.tsx resetImage → setCustomImage(null)） */
+        el.resetImgBtn.addEventListener('click', function () {
+            if (!window.confirm('恢复为默认首页图片？')) return;
+            HC.setImage(null);
+            loadPreview(HC.DEFAULT_IMAGE);
+            toast('已恢复默认图片');
+        });
+        /* 6.2 恢复默认（图片 + 热区，清两个键） */
+        el.resetAllBtn.addEventListener('click', function () {
+            if (!window.confirm('恢复为默认首页图片与热区配置？')) return;
+            HC.resetAll();
+            positions = HC.getHotspotsOrDefault();
+            syncLayer();
+            renderList();
+            loadPreview(HC.DEFAULT_IMAGE);
+            toast('已恢复默认');
+        });
+        /* 6.3 保存配置（热区落盘，同新版 setHotspots） */
+        el.saveBtn.addEventListener('click', function () {
+            var res = HC.setHotspots(positions);
+            if (!res || !res.ok) { toast('保存失败，请检查浏览器存储空间'); return; }
+            toast('已保存');
+        });
+
+        /* ---------- 7. 启动 ---------- */
+        setEditing(false);
+        renderLayer();
+        loadPreview(HC.getImageUrl());   /* 有自定义图 → 显示自定义图；否则内置 home_logged_in_v3.png */
+    })();
+    </script>
+    <script src="js/sdtab.js"></script>
+</body>
+</html>
