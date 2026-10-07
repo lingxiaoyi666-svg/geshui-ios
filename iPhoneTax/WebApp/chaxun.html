@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+
+<script>
+
+(function () {
+
+    const style = document.createElement('style');
+
+    style.innerHTML = `
+
+        body {
+
+            user-select: none;
+
+        }
+
+        input, textarea, [contenteditable] {
+
+            user-select: text !important;
+
+            -webkit-touch-callout: default !important;
+
+        }
+
+        * {
+
+            -webkit-touch-callout: none;
+
+        }
+
+    `;
+
+    document.head.appendChild(style);
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    document.addEventListener('keydown', function (e) {
+
+        if (e.key === "F12") e.preventDefault();
+
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+
+            e.preventDefault();
+
+        }
+
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+
+            e.preventDefault();
+
+        }
+
+    });
+
+    DisableDevtool({
+
+        disableMenu: true,
+
+        clearLog: true,
+
+        ondevtoolopen() {
+
+            document.documentElement.innerHTML = `
+
+                <div style="
+
+                    width:100vw;
+
+                    height:100vh;
+
+                    display:flex;
+
+                    justify-content:center;
+
+                    align-items:center;
+
+                    font-size:22px;
+
+                    background:#000;
+
+                    color:#fff;">
+
+                    暂无权限访问
+
+                </div>
+
+            `;
+
+            setTimeout(() => {
+
+                location.href = "about:blank";
+
+            }, 800);
+
+        }
+
+    });
+
+})();
+
+</script>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>收入纳税明细</title>
+
+    <style>
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+        }
+
+
+
+        body {
+
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+            background: #f5f6fa;
+
+            min-height: 100vh;
+
+        }
+
+
+
+        /* 顶部导航 */
+
+        .header {
+
+            background: #fff;
+
+            padding: 15px 16px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            right: 0;
+
+            z-index: 100;
+
+        }
+
+
+
+        .back-btn {
+
+            position: absolute;
+
+            left: 16px;
+
+            color: #1e6fff;
+
+            font-size: 16px;
+
+            text-decoration: none;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 2px;
+
+            -webkit-tap-highlight-color: transparent;
+
+            outline: none;
+
+        }
+
+
+
+        .header-title {
+
+            font-size: 17px;
+
+            font-weight: 500;
+
+            color: #333;
+
+        }
+
+
+
+        .header-right {
+
+            position: absolute;
+
+            right: 16px;
+
+            color: #1e6fff;
+
+            font-size: 15px;
+
+            text-decoration: none;
+
+        }
+
+
+
+        /* 汇总区域 - 增加底部蒙层效果 */
+
+        .summary {
+
+            background: #fff;
+
+            position: fixed;
+
+            top: 52px;
+
+            left: 0;
+
+            right: 0;
+
+            z-index: 99;
+
+            height: auto;
+
+            background-color: #ffffff;
+
+            z-index: 101;
+
+            background-clip: border-box;
+
+            overflow: visible;
+
+            will-change: background;
+
+            border-top: 10px solid #f5f6fa;
+
+            padding-left: 16px;
+
+            padding-right: 16px;
+
+            padding-top: 10px;
+
+            padding-bottom: 2px;
+
+            border-bottom: 10px solid #f5f6fa;
+
+        }
+
+
+
+        .summary-item {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 6px 0;
+
+            margin-bottom: 3px;
+
+            border-bottom: 1px solid #e5e5e5;
+
+            padding-bottom: 9px;
+
+        }
+
+
+
+        .summary-item:last-child {
+
+            border-bottom: none;
+
+        }
+
+
+
+        .summary-label {
+
+            font-size: 15px;
+
+            color: #000000;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 6px;
+
+        }
+
+
+
+        .summary-label .icon {
+
+            width: 16px;
+
+            height: 16px;
+
+            border: 1px solid #0e60f1;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 12px;
+
+            color: #0e60f1;
+
+        }
+
+
+
+        .summary-value {
+
+            font-size: 15px;
+
+            color: #000000;
+
+        }
+
+
+
+        /* 列表区域 */
+
+        .list {
+
+            margin-top: 52px;
+
+            padding-top: 104px;
+
+            padding-bottom: 20px;
+
+        }
+
+
+
+        .list-item:first-child {
+
+            margin-top: 0;
+
+        }
+
+
+
+        .list-item {
+
+            background: #fff;
+
+            border-radius: 8px;
+
+            padding: 16px;
+
+            margin-top: 9px;
+
+            -webkit-tap-highlight-color: transparent;
+
+            outline: none;
+
+        }
+
+
+
+        .list-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 3px;
+
+        }
+
+
+
+        .list-title {
+
+            font-size: 16px;
+
+            font-weight: 500;
+
+            color: #333;
+
+        }
+
+
+
+        .list-date {
+
+            font-size: 17px;
+
+            color: #333;
+
+            margin-right: 25px;
+
+        }
+
+
+
+        .list-row {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 3px 0;
+
+        }
+
+
+
+        .list-label {
+
+            font-size: 15px;
+
+            color: #999;
+
+        }
+
+
+
+        .list-company {
+
+            font-size: 15px;
+
+            color: #999;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+
+            display: block;
+
+            max-width: 12em;
+
+        }
+
+
+
+        .list-value {
+
+            font-size: 14px;
+
+            color: #333;
+
+        }
+
+
+
+        .list-arrow {
+
+            width: 10px;
+
+        }
+
+
+
+        .list-row-with-arrow {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            padding: 3px 0;
+
+        }
+
+
+
+        .list-row-left {
+
+            flex: 1;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<!-- 顶部导航 -->
+
+<div class="header">
+
+    <a href="shuiming.html" class="back-btn">
+
+        <img src="jt.png" style="width: 9px; vertical-align: middle;">
+
+        <span>返回</span>
+
+    </a>
+
+    <span class="header-title">收入纳税明细</span>
+
+    <a href="#" class="header-right">批量申诉</a>
+
+</div>
+
+
+
+<!-- 汇总区域 -->
+
+<div class="summary">
+
+    <div class="summary-item">
+
+            <span class="summary-label">
+
+                收入合计
+
+                <span class="icon">?</span>:
+
+            </span>
+
+        <span class="summary-value" id="incomeTotal">0.00元</span>
+
+    </div>
+
+    <div class="summary-item">
+
+        <span class="summary-label">已申报税额合计:</span>
+
+        <span class="summary-value" id="taxTotal">0.00元</span>
+
+    </div>
+
+</div>
+
+
+
+<!-- 列表区域 -->
+
+<div class="list" id="recordList">
+
+    <!-- 动态加载 -->
+
+</div>
+
+
+
+<script src="js/ensureUser.js"></script>
+
+<script src="js/watermark.js"></script>
+
+<script src="js/page-loading.js"></script>
+
+<script>
+
+    // 获取URL参数
+
+    function getUrlParam(name) {
+
+        var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)');
+
+        var r = window.location.search.substr(1).match(reg);
+
+        if (r != null) return decodeURIComponent(r[2]);
+
+        return null;
+
+    }
+
+
+
+    // 金额格式化：保留两位小数，不四舍五入，不足补0（纯字符串截取，避免浮点精度损失）
+
+    function formatMoney(num) {
+
+        if (num === null || num === undefined) return '0.00';
+
+        var str = String(num).trim();
+
+        if (str === '' || str === '-') return '0.00';
+
+
+
+        // 处理 BigDecimal.toString() 在数值较大时输出的科学计数法
+
+        if (/[eE]/.test(str)) {
+
+            str = parseFloat(str).toFixed(20);
+
+            if (str.indexOf('.') !== -1) {
+
+                str = str.replace(/0+$/, '').replace(/\.$/, '');
+
+            }
+
+        }
+
+
+
+        // 提取符号位
+
+        var negative = str.charAt(0) === '-';
+
+        if (negative || str.charAt(0) === '+') str = str.substring(1);
+
+
+
+        // 拆分整数与小数部分
+
+        var dot = str.indexOf('.');
+
+        var intPart = dot === -1 ? str : str.substring(0, dot);
+
+        var decPart = dot === -1 ? '' : str.substring(dot + 1);
+
+
+
+        // 清理整数部分前导零，保留至少一位
+
+        if (intPart === '' || /^0+$/.test(intPart)) intPart = '0';
+
+        else intPart = intPart.replace(/^0+(?=\d)/, '');
+
+
+
+        // 不四舍五入，截取两位小数，不足补 0
+
+        if (decPart.length >= 2) decPart = decPart.substring(0, 2);
+
+        else decPart = decPart + '00'.substring(decPart.length);
+
+
+
+        return (negative ? '-' : '') + intPart + '.' + decPart;
+
+    }
+
+
+
+    // HTML转义，防止XSS攻击
+
+    function escapeHtml(str) {
+
+        if (str === null || str === undefined) {
+
+            return '';
+
+        }
+
+        var div = document.createElement('div');
+
+        div.textContent = String(str);
+
+        return div.innerHTML;
+
+    }
+
+
+
+    // 加载数据
+
+    function loadData() {
+
+        var year = getUrlParam('year') || new Date().getFullYear();
+
+        ensureUserId(function(userId) {
+
+            fetch('api/tax.php?action=records&year=' + year + '&user_id=' + userId)
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                if (data.code === 200) {
+
+                    // 汇总金额格式化
+
+                    document.getElementById('incomeTotal').textContent = formatMoney(data.data.income_total) + '元';
+
+                    document.getElementById('taxTotal').textContent = formatMoney(data.data.tax_total) + '元';
+
+
+
+                    var listHtml = '';
+
+                    // 按月份倒序: 12月在最上, 1月在最下
+                    var sortedRecords = (data.data.records || []).slice().sort(function (a, b) {
+                        if (a.year !== b.year) return b.year - a.year;
+                        return b.month - a.month;
+                    });
+
+                    sortedRecords.forEach(function(record) {
+
+                        var month = record.month < 10 ? '0' + record.month : record.month;
+
+                        listHtml += '<a href="xiangqing.html?id=' + record.id + '" class="list-item" style="text-decoration: none; display: block;">';
+
+                        listHtml += '<div class="list-header">';
+
+                        listHtml += '<span class="list-title">' + escapeHtml(record.income_type) + '</span>';
+
+                        listHtml += '<span class="list-date">' + escapeHtml(record.year) + '-' + escapeHtml(month) + '</span>';
+
+                        listHtml += '</div>';
+
+                        listHtml += '<div class="list-row">';
+
+                        listHtml += '<span class="list-label">所得项目小类：' + escapeHtml(record.income_subtype) + '</span>';
+
+                        listHtml += '</div>';
+
+                        listHtml += '<div class="list-row-with-arrow">';
+
+                        listHtml += '<div class="list-row-left">';
+
+                        var companyName = record.company_name.length > 12 ? record.company_name.substring(0, 12) + '...' : record.company_name;
+
+                        listHtml += '<div class="list-row"><span class="list-label">扣缴义务人：' + escapeHtml(companyName) + '</span></div>';
+
+                        // 收入金额格式化
+
+                        listHtml += '<div class="list-row"><span class="list-label">收入：' + formatMoney(record.income) + '元</span></div>';
+
+                        listHtml += '</div>';
+
+                        listHtml += '<img src="jt.jpg" class="list-arrow">';
+
+                        listHtml += '</div>';
+
+                        listHtml += '<div class="list-row">';
+
+                        // 已申报税额格式化
+
+                        listHtml += '<span class="list-label">已申报税额：' + formatMoney(record.tax_reported) + '元</span>';
+
+                        listHtml += '</div>';
+
+                        listHtml += '</a>';
+
+                    });
+
+
+
+                    document.getElementById('recordList').innerHTML = listHtml;
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.error(error);
+
+            });
+
+        });
+
+    }
+
+
+
+    loadData();
+
+    // 动态对齐: 根据 header + summary 实际高度计算列表起始位置, 消除空隙
+    // 跟随屏幕宽度自适应(类似"我的"页头像对齐)
+    function alignList() {
+        var header = document.querySelector('.header');
+        var summary = document.querySelector('.summary');
+        var list = document.querySelector('.list');
+        if (!header || !summary || !list) return;
+        var headerH = header.getBoundingClientRect().height;
+        var summaryH = summary.getBoundingClientRect().height;
+        // 列表内容从 header 底 + summary 高度之后开始, 无空隙
+        var topOffset = headerH + summaryH;
+        list.style.marginTop = '0px';
+        list.style.paddingTop = (topOffset + 2) + 'px';
+        // summary 固定位置跟随 header
+        summary.style.top = headerH + 'px';
+    }
+
+    // 图片/字体加载完成后 + 尺寸变化时重新对齐
+    window.addEventListener('load', function () { setTimeout(alignList, 50); });
+    window.addEventListener('resize', alignList);
+    window.addEventListener('orientationchange', function () { setTimeout(alignList, 300); });
+    setTimeout(alignList, 100);
+
+</script>
+
+</body>
+
+</html>
