@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>我要咨询</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f6fa; min-height: 100vh; }
+.header { background: #fff; padding: 15px 16px; display: flex; align-items: center; position: relative; border-bottom: 1px solid #f0f0f0; }
+.back-btn { position: absolute; left: 16px; color: #1e6fff; font-size: 16px; text-decoration: none; }
+.header-title { font-size: 17px; font-weight: 500; color: #333; margin: 0 auto; }
+.content { padding: 16px; }
+.menu-list { background: #fff; border-radius: 12px; overflow: hidden; }
+.menu-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f5f5f5; text-decoration: none; cursor: pointer; }
+.menu-item:last-child { border-bottom: none; }
+.menu-icon { width: 21px; margin-right: 14px; display: flex; align-items: center; justify-content: center; }
+.menu-icon img { width: 20px; }
+.menu-text { flex: 1; font-size: 15px; color: #333; }
+.menu-arrow { color: #000; font-size: 14px; }
+</style>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- ===== sd-spec 视觉对齐层（只覆盖外观，不改任何功能/逻辑/文案） ===== -->
+<style id="sd-spec-override">
+/* 二级页 header —— SPEC §3：白底 / 1px #F0F0F0 下边线 / 标题 18px 600 #1A1A1A / 返回 16px #1677FF */
+body .header{background:#FFFFFF!important;color:#1A1A1A!important;border-bottom:1px solid #F0F0F0!important;box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:0!important;padding:12px 16px!important;position:sticky!important;top:0!important;z-index:900!important}
+body .header::after{content:''!important;flex:0 0 70px;width:70px;min-width:70px}
+body .header .back-btn{position:static!important;left:auto!important;right:auto!important;flex:0 0 70px!important;width:70px;display:flex!important;align-items:center!important;gap:2px!important;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important;line-height:1.2!important;background:none!important;border:none!important}
+body .header .header-title{flex:1 1 auto!important;min-width:0!important;margin:0!important;text-align:center!important;font-size:18px!important;font-weight:600!important;color:#1A1A1A!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .header .header-link,body .header .header-right{position:static!important;flex:0 0 70px!important;width:70px;text-align:right;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important}
+/* 页面底色 + 底部胶囊导航留白（SPEC §1 TabBarChrome.height = 86） */
+html,body{background:#F5F6FA!important}
+body{padding-bottom:86px!important}
+/* 内容区（SPEC §4 scrollContent） */
+.content{padding:16px!important;padding-bottom:24px!important}
+/* 列表卡片（SPEC §4 card + list-row） */
+.menu-list{background:#FFFFFF!important;border-radius:12px!important;overflow:hidden!important;box-shadow:none!important;margin:0 0 12px!important}
+.menu-item{display:flex!important;align-items:center!important;padding:16px!important;border-bottom:1px solid #F0F0F0!important;background:transparent!important}
+.menu-item:last-child{border-bottom:none!important}
+.menu-item:active{background:#F7F8FB!important}
+.menu-icon img{width:20px!important}
+.menu-text{flex:1!important;font-size:16px!important;font-weight:400!important;color:#1A1A1A!important}
+.menu-arrow{font-size:0!important;width:8px!important;height:8px!important;border-top:1.6px solid #C4C9D4!important;border-right:1.6px solid #C4C9D4!important;transform:rotate(45deg);color:transparent!important;margin-left:auto!important;flex:0 0 auto!important}
+</style>
+</head>
+<body>
+<div class="header">
+    <a href="index.html" class="back-btn">‹ 返回</a>
+    <div class="header-title">我要咨询</div>
+</div>
+<div class="content">
+    <div class="menu-list">
+        <div class="menu-item" onclick="location.href='gerenxinxi_menu.html'">
+            <div class="menu-icon"><img src="zy/gh.png" alt="个人信息"></div>
+            <span class="menu-text">修改个人信息</span>
+            <span class="menu-arrow">></span>
+        </div>
+        <div class="menu-item" onclick="location.href='nashui_edit.html'">
+            <div class="menu-icon"><img src="zy/zx.png" alt="纳税数据"></div>
+            <span class="menu-text">修改纳税数据</span>
+            <span class="menu-arrow">></span>
+        </div>
+        <div class="menu-item" onclick="location.href='shuiming.html'">
+            <div class="menu-icon"><img src="zy/bz.png" alt="纳税明细"></div>
+            <span class="menu-text">收入纳税明细</span>
+            <span class="menu-arrow">></span>
+        </div>
+    </div>
+</div>
+<script src="js/page-loading.js"></script>
+    <nav class="bottom-nav"></nav>
+    <script src="js/sdtab.js"></script>
+</body>
+</html>
