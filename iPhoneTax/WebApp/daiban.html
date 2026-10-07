@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/apple.js"></script>
+<script>
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        body {
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        * {
+            -webkit-touch-callout: none;
+        }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function (e) {
+        if (e.key === "F12") e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+            e.preventDefault();
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+            e.preventDefault();
+        }
+    });
+    DisableDevtool({
+        disableMenu: true,
+        clearLog: true,
+        ondevtoolopen() {
+            document.documentElement.innerHTML = `
+                <div style="
+                    width:100vw;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    font-size:22px;
+                    background:#000;
+                    color:#fff;">
+                    暂无权限访问
+                </div>
+            `;
+            setTimeout(() => {
+                location.href = "about:blank";
+            }, 800);
+        }
+    });
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>待办</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f6f7fb;
+            min-height: 100vh;
+        }
+        
+        .daiban-page {
+            min-height: 100vh;
+            background: #f6f7fb;
+        }
+        
+        .daiban-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        
+        .daiban-header img {
+            width: 100%;
+            display: block;
+        }
+        
+        .daiban-content {
+            background: #f6f7fb;
+            border-radius: 16px 16px 0 0;
+            margin-top: 80px;
+            position: relative;
+            z-index: 5;
+            min-height: calc(100vh - 120px);
+            padding-bottom: 100px;
+        }
+        
+        </style>
+    <link rel="stylesheet" href="css/nav.css">
+<script src="js/local_api.js"></script>
+    <link rel="stylesheet" href="css/sdtheme.css"><style id="sd-spec-align">
+/* ===== SPEC 对齐层 v1 (勿手改：由 tools/spec_align.py 生成) ===== */
+body {
+  background: #F5F6FA !important;
+  padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+}
+/* 底部胶囊导航由 css/sdtheme.css + js/sdtab.js 统一提供，此处不重复定义 */
+
+/* --- 待办：SPEC 3 节通用白底 header（原全宽 jpg 头改为白底 + 18px 标题） --- */
+body .daiban-header {
+  position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important;
+  z-index: 900 !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px !important;
+  background: #fff !important; border-bottom: 1px solid #F0F0F0 !important;
+  border-radius: 0 !important; box-shadow: none !important;
+}
+body .daiban-header img { display: none !important; }
+body .daiban-header .header-title {
+  flex: 1 1 auto !important; text-align: center !important;
+  font-size: 18px !important; font-weight: 600 !important; color: #1A1A1A !important;
+}
+/* --- 内容区：SPEC 4 节 .scrollContent --- */
+body .daiban-content {
+  margin-top: calc(50px + env(safe-area-inset-top, 0px)) !important;
+  padding: 16px !important;
+  padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  background: transparent !important; border-radius: 0 !important;
+}
+/* --- 页面底色：SPEC 4 节 .page（覆盖页面自带的 #f6f7fb） --- */
+body .daiban-page { background: #F5F6FA !important; }
+/* --- SPEC 4 节 .empty-card / .empty-text --- */
+body .daiban-content .card,
+body .daiban-content .empty-card {
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  background: #fff !important; border-radius: 12px !important;
+  padding: 32px !important; margin-bottom: 12px !important;
+}
+body .daiban-content .empty-text { font-size: 15px !important; color: #999999 !important; }
+</style>
+</head>
+<body data-ui-page="daiban">
+    <!-- ===== UIKit 渲染根：顶部栏 + 内容区由 js/ui_kit.js 按 DEFAULTS.pages.daiban 生成，
+         id / class / 文案 / 跳转与原 DOM 逐值一致；下方底栏与业务脚本保持原样 ===== -->
+    <div id="uiRoot"></div>
+    <script src="js/ui_kit.js"></script>
+    <script>UIKit.render('daiban', document.getElementById('uiRoot'));</script>
+    <script src="js/ui_editor.js"></script>
+    
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <a href="shouye.html" class="nav-item">
+            <div class="nav-icon">
+                <img src="caidan/sy2.png" width="19" height="19" alt="首页">
+            </div>
+            <span class="nav-text">首页</span>
+        </a>
+        <a href="daiban.html" class="nav-item active">
+            <div class="nav-icon">
+                <img src="caidan/db1.png" width="19" height="19" alt="待办">
+            </div>
+            <span class="nav-text">待办</span>
+        </a>
+        <a href="bancha.html" class="nav-item">
+            <div class="nav-icon">
+                <img src="caidan/bc2.png" width="19" height="19" alt="办查">
+            </div>
+            <span class="nav-text">办&查</span>
+        </a>
+        <a href="message.html" class="nav-item">
+            <div class="nav-icon">
+                <img src="caidan/xx2.png" width="19" height="19" alt="消息">
+            </div>
+            <span class="nav-text">消息</span>
+        </a>
+        <a href="index.html" class="nav-item">
+        <div class="nav-icon">
+            <img src="caidan/w2.png" width="19" height="19" alt="我的">
+            </div>
+            <span class="nav-text">我的</span>
+        </a>
+    </div>
+    <script>
+        // iOS设备检测，底部导航上移
+        (function() {
+            var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            if (isIOS) {
+                var bottomNav = document.querySelector('.bottom-nav');
+                if (bottomNav) {
+                    bottomNav.classList.add('ios-device');
+                }
+            }
+        })();
+    </script>
+    <script src="js/ensureUser.js"></script>
+    <script src="js/watermark.js"></script>
+    <script>ensureUserId(function(){if(typeof watermarkRefresh==='function'){watermarkRefresh();}});</script>
+<script src="js/page-loading.js"></script>
+    <script src="js/sdtab.js"></script>
+</body>
+</html>
