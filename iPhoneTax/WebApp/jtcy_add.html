@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>新增家庭成员</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f6fa; min-height: 100vh; }
+.header { background: #fff; padding: 15px 16px; display: flex; align-items: center; position: relative; border-bottom: 1px solid #f0f0f0; }
+.back-btn { position: absolute; left: 16px; color: #1e6fff; font-size: 16px; text-decoration: none; }
+.header-title { font-size: 17px; font-weight: 500; color: #333; margin: 0 auto; }
+.content { padding: 16px; }
+.card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.card-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px; }
+.info-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+.info-label { color: #666; }
+.info-value { color: #333; }
+.form-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.form-label { width: 100px; font-size: 14px; color: #666; flex-shrink: 0; }
+.form-input { flex: 1; border: none; outline: none; font-size: 15px; color: #333; padding: 4px 0; }
+.btn { display: block; width: 100%; height: 44px; background: #1e6fff; border: none; border-radius: 22px; font-size: 16px; color: #fff; margin-top: 16px; }
+
+</style>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- ===== sd-spec 视觉对齐层（只覆盖外观，不改任何功能/逻辑/文案） ===== -->
+<style id="sd-spec-override">
+/* ==== SPEC-ALIGN:BEGIN 由 align_spec.py 生成，源 newui/SPEC.md §1/§3/§4/§5 ==== */
+/* ---------- 页面底色 + 底部胶囊导航留白（SPEC §1 TabBarChrome.height = 86） ---------- */
+html,body{background:#F5F6FA!important;overflow-x:hidden}
+body{padding-bottom:86px!important;color:#1A1A1A!important}
+
+/* ---------- 二级页 header（SPEC §3：白底 / 1px #F0F0F0 下边线 / 标题 18px 600 #1A1A1A / 返回 16px #1677FF） ---------- */
+body .header{background:#FFFFFF!important;color:#1A1A1A!important;border-bottom:1px solid #F0F0F0!important;
+  box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  gap:0!important;padding:12px 16px!important;position:sticky!important;top:0!important;z-index:900!important}
+body .header .back-btn{position:static!important;left:auto!important;right:auto!important;
+  flex:0 0 70px!important;width:70px;display:flex!important;align-items:center!important;gap:2px!important;
+  color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important;
+  line-height:1.2!important;background:none!important;border:none!important;-webkit-tap-highlight-color:transparent}
+body .header .back-btn img,body .header .back-icon{width:9px!important;height:auto!important;
+  filter:none!important;opacity:1!important;vertical-align:middle}
+body .header .header-title{flex:1 1 auto!important;min-width:0!important;max-width:none!important;
+  margin:0!important;padding:0!important;text-align:center!important;font-size:18px!important;
+  font-weight:600!important;color:#1A1A1A!important;line-height:1.3!important;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .header .header-link,body .header .header-right{position:static!important;flex:0 0 70px!important;width:70px;
+  text-align:right;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-tap-highlight-color:transparent}
+/* 该页 header 无右侧链接节点 → 用 ::after 占 70px，保证标题在三栏(70/auto/70)中严格居中 */
+body .header::after{content:''!important;flex:0 0 70px;width:70px;min-width:70px;height:1px}
+
+/* ---------- 内容 / 卡片（SPEC §4 .page / .scrollContent / .card / .section-title） ---------- */
+body .content{padding:16px!important;padding-bottom:24px!important;background:transparent!important}
+body .card{background:#FFFFFF!important;border-radius:12px!important;padding:16px!important;
+  margin-bottom:12px!important;box-shadow:0 1px 2px rgba(0,0,0,.03)!important}
+body .content .card>.card-title{position:relative;display:block!important;padding:0 0 0 9px!important;
+  margin:0 0 12px!important;font-size:16px!important;font-weight:600!important;color:#1A1A1A!important;text-align:left!important}
+body .content .card>.card-title::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:15px;border-radius:2px;background:#1677FF}
+
+/* ---------- 列表（SPEC §4：白卡 radius 12 / 行标题 18px 600 / 副文字 15px #666 lh22 / 分隔 1px #F5F5F5） ---------- */
+body .list-item{background:#FFFFFF!important;border-radius:12px!important;padding:16px!important;
+  margin-bottom:12px!important;border-bottom:none!important;box-shadow:0 1px 2px rgba(0,0,0,.03)!important}
+body .list-item .list-header{display:flex!important;justify-content:space-between!important;align-items:center!important;
+  gap:12px;margin:0 0 12px!important;padding:0 0 12px!important;background:transparent!important;
+  border-bottom:1px solid #F5F5F5!important;box-shadow:none!important}
+body .list-item .list-title{flex:1 1 auto;min-width:0;font-size:18px!important;font-weight:600!important;
+  color:#1A1A1A!important;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body .list-item .list-date{flex:0 0 auto;font-size:15px!important;color:#666666!important}
+body .list-item .list-row{font-size:15px!important;color:#666666!important;line-height:22px!important;margin-top:6px!important}
+body .list-item .list-actions{display:flex;gap:16px;margin-top:14px!important;padding-top:14px;
+  border-top:1px solid #F5F5F5}
+body .list-item .link-btn,body .list-actions .link-btn{color:#1677FF!important;font-size:14px!important;text-decoration:none!important}
+body .list-item .del-btn,body .list-actions .del-btn{color:#FF4D4F!important;font-size:14px!important;text-decoration:none!important}
+body .list-item .list-row span[style*="#1e6fff"]{color:#1677FF!important}
+
+/* ---------- 信息行 / 空态（SPEC §4 .empty-card / .empty-text 15px #999） ---------- */
+body .info-item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  padding:14px 0!important;border-bottom:1px solid #F5F5F5!important;font-size:15px!important}
+body .info-item:last-child{border-bottom:none!important}
+body .info-label{font-size:15px!important;color:#666666!important;line-height:22px}
+body .info-value{font-size:15px!important;color:#1A1A1A!important;line-height:22px;text-align:right}
+body .empty,body .empty-card{background:#FFFFFF!important;border-radius:12px!important;padding:32px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  font-size:15px!important;color:#999999!important;line-height:22px;text-align:center}
+body .empty-text{font-size:15px!important;color:#999999!important}
+
+/* ---------- 表单（SPEC §4 .form-item / .form-label 100px 15px #666 / .form-input 16px #1A1A1A） ---------- */
+body .form-item{display:flex!important;align-items:flex-start!important;
+  padding:14px 0!important;border-bottom:1px solid #F0F0F0!important}
+body .form-item:last-of-type{border-bottom:none!important}
+body .form-item .form-label{width:100px!important;flex:0 0 100px!important;max-width:100px!important;
+  font-size:15px!important;color:#666666!important;line-height:22px;margin-top:6px!important}
+body .form-item input.form-input,body .form-item select.form-select,
+body input.form-input,body select.form-select{flex:1 1 auto!important;width:auto!important;min-width:0;
+  font-size:16px!important;color:#1A1A1A!important;line-height:24px;
+  background:transparent!important;background-color:transparent!important;
+  border:none!important;border-radius:0!important;padding:5px 0!important;
+  outline:none!important;box-shadow:none!important;-webkit-appearance:none;appearance:none}
+body .form-item input.form-input::placeholder{color:#BFBFBF!important;font-size:16px}
+
+/* ---------- 按钮（SPEC §4 .btn-primary / .btn-secondary） ---------- */
+body .btn,body .btn-create,body button[type="submit"]{display:block!important;width:100%!important;height:auto!important;
+  max-width:none!important;
+  background:#1677FF!important;color:#FFFFFF!important;border:none!important;border-radius:8px!important;
+  padding:14px 0!important;font-size:17px!important;font-weight:500!important;line-height:1.35;
+  text-align:center!important;margin-top:16px!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
+body .btn-secondary{background:#FFFFFF!important;color:#1677FF!important;border:1px solid #1677FF!important;
+  border-radius:8px!important;font-size:15px!important;font-weight:500!important}
+
+/* ---------- 底部操作面板 / 弹层（SPEC §5） ---------- */
+body .modal-mask{background:rgba(0,0,0,.4)!important}
+body .modal-panel{background:#FFFFFF!important;border-radius:16px 16px 0 0!important;padding:16px!important;
+  padding-bottom:calc(34px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -6px 24px rgba(0,0,0,.08)}
+body .modal-panel>.card-title{display:block!important;font-size:16px!important;font-weight:600!important;
+  color:#1A1A1A!important;text-align:center!important;margin:0 0 12px!important;padding:0 0 12px!important;
+  border-bottom:1px solid #F5F5F5}
+
+/* ---------- 提示条 tip-box / 委托代理页空态（SPEC §4） ---------- */
+body .info-bar{background:#FFF7E6!important;border:1px solid #FFE7BA!important;border-radius:10px!important;
+  margin:12px 16px 0!important;padding:12px!important;font-size:13px!important;color:#B87333!important;line-height:20px!important}
+body .empty-wrap{min-height:auto!important;padding:32px 16px 24px!important}
+body .empty-illus{width:180px!important;height:135px!important;margin-bottom:20px!important}
+body .empty-primary{font-size:16px!important;color:#1A1A1A!important;line-height:22px;margin-bottom:8px!important;max-width:320px}
+body .empty-secondary{font-size:15px!important;color:#999999!important;line-height:22px;margin-bottom:24px!important}
+/* ==== SPEC-ALIGN:END ==== */
+</style>
+</head>
+<body>
+
+<div class="header">
+    <a href="jtcy.html" class="back-btn">‹ 返回</a>
+    <div class="header-title">新增家庭成员</div>
+</div>
+<div class="content">
+    <div class="card">
+        <div class="form-item"><span class="form-label">姓名</span><input class="form-input" id="fName" placeholder="请输入姓名"></div>
+        <div class="form-item"><span class="form-label">与本人关系</span><input class="form-input" id="fRel" placeholder="配偶/子女/父母"></div>
+        <div class="form-item"><span class="form-label">身份证号</span><input class="form-input" id="fId" placeholder="请输入身份证号"></div>
+        <div class="form-item"><span class="form-label">联系电话</span><input class="form-input" id="fPhone" placeholder="请输入电话"></div>
+        <button class="btn" onclick="saveFamily()">保存</button>
+    </div>
+</div>
+<script>
+function saveFamily() {
+    var name = document.getElementById('fName').value;
+    var rel = document.getElementById('fRel').value;
+    var idnum = document.getElementById('fId').value;
+    if (!name || !rel) { alert('请填写姓名和关系'); return; }
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem('geshui_family')) || []; } catch(e) {}
+    list.push({ id: Date.now(), name: name, relation: rel, id_number: idnum, phone: document.getElementById('fPhone').value, _title: name, _date: rel });
+    localStorage.setItem('geshui_family', JSON.stringify(list));
+    alert('保存成功');
+    location.href = 'jtcy.html';
+}
+</script>
+<script src="js/page-loading.js"></script>
+<!-- 底部胶囊导航：内容由 js/sdtab.js 注入（SPEC §2），本节点仅为挂载点 -->
+<div class="bottom-nav"></div>
+    <script src="js/sdtab.js"></script>
+</body>
+</html>
