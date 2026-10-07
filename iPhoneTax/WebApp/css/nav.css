@@ -1,0 +1,39 @@
+/* 统一页面滚动条处理 */
+html, body { overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+
+/* 底部导航公共样式 */
+.bottom-nav {
+    position: fixed;
+    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    width: calc(100% - 24px);
+    background: rgba(255, 255, 255, 0.92);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 30px;
+    z-index: 100;
+}
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+.nav-icon { width: 22px; height: 22px; margin-bottom: 3px; display: flex; align-items: center; justify-content: center; }
+.nav-icon img { width: 20px; height: 20px; object-fit: contain; }
+.nav-text { font-size: 11px; color: #999; }
+.nav-item.active .nav-text { color: #1e6fff; }
+.nav-badge { position: absolute; top: -2px; right: 0; background: #ff4444; color: #fff; font-size: 10px; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+
+/* 底部导航让位高度（页面 padding-bottom 依赖；跨机型含手势条安全区） */
+:root { --bottom-nav-clearance: 86px; }
+@supports (bottom: env(safe-area-inset-bottom)) {
+    :root { --bottom-nav-clearance: calc(86px + env(safe-area-inset-bottom, 0px)); }
+}
