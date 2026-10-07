@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>修改纳税数据</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f6fa; min-height: 100vh; }
+.header { background: #fff; padding: 15px 16px; display: flex; align-items: center; position: relative; border-bottom: 1px solid #f0f0f0; position: sticky; top: 0; z-index: 100; }
+.back-btn { position: absolute; left: 16px; color: #1e6fff; font-size: 16px; text-decoration: none; }
+.header-title { font-size: 17px; font-weight: 500; color: #333; margin: 0 auto; }
+
+.content { padding: 14px 16px 100px; }
+.tip { background: #fff8e6; border: 1px solid #ffe58f; color: #ad6800; font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 14px; line-height: 1.6; }
+
+/* 生成表单卡片 */
+.gen-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 14px; }
+.gen-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 12px; }
+.form-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.form-item:last-child { border-bottom: none; }
+.form-label { width: 90px; font-size: 14px; color: #666; flex-shrink: 0; }
+.form-input { flex: 1; border: none; outline: none; font-size: 15px; color: #333; padding: 4px 0; }
+.form-select { flex: 1; border: none; outline: none; font-size: 15px; color: #333; background: #fff; }
+.range-row { display: flex; align-items: center; gap: 8px; flex: 1; }
+.range-row .form-select { flex: 1; }
+.range-sep { color: #999; font-size: 13px; }
+
+.btn { display: block; width: 100%; height: 44px; background: #1e6fff; border: none; border-radius: 22px; font-size: 16px; color: #fff; margin-top: 14px; }
+.btn-secondary { background: #fff; color: #1e6fff; border: 1px solid #1e6fff; margin-top: 10px; }
+
+/* 已生成列表 */
+.list-title-bar { font-size: 14px; font-weight: 600; color: #333; margin: 16px 4px 10px; display: flex; justify-content: space-between; align-items: center; }
+.list-title-bar .count { color: #999; font-size: 12px; font-weight: normal; }
+
+/* 滑动删除容器 */
+.swipe-wrap { position: relative; overflow: hidden; border-radius: 10px; margin-bottom: 8px; background: #ff4d4f; }
+.swipe-del { position: absolute; top: 0; right: 0; bottom: 0; width: 76px; background: #ff4d4f; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.list-item { background: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: relative; transition: transform 0.25s ease; will-change: transform; }
+.list-item.swiped { transform: translateX(-76px); }
+.list-left .month { font-size: 15px; font-weight: 600; color: #333; }
+.list-left .company { font-size: 12px; color: #999; margin-top: 2px; }
+.list-left .type-tag { display: inline-block; font-size: 10px; color: #b8860b; background: #fff8e6; border: 1px solid #ffe58f; border-radius: 8px; padding: 1px 6px; margin-top: 3px; }
+.list-right { text-align: right; }
+.list-right .income { font-size: 14px; color: #1e6fff; font-weight: 600; }
+.list-right .tax { font-size: 11px; color: #999; margin-top: 2px; }
+.hint-small { font-size: 11px; color: #bbb; text-align: center; margin: 4px 0 8px; }
+.empty { text-align: center; color: #999; font-size: 13px; padding: 30px 0; }
+
+/* 编辑弹窗 */
+.mask { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: none; }
+.modal { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); width: 300px; background: #fff; border-radius: 14px; padding: 20px; z-index: 301; display: none; }
+.modal-title { font-size: 16px; font-weight: 600; color: #333; text-align: center; margin-bottom: 6px; }
+.modal-sub { font-size: 12px; color: #999; text-align: center; margin-bottom: 16px; }
+.modal-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+.modal-item .ml { width: 74px; font-size: 13px; color: #666; flex-shrink: 0; }
+.modal-item input { flex: 1; border: none; outline: none; font-size: 15px; color: #333; }
+.modal-item .tax-preview { flex: 1; text-align: right; font-size: 14px; color: #1e6fff; font-weight: 600; }
+.modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+.modal-btns .mbtn { flex: 1; height: 38px; border: none; border-radius: 19px; font-size: 14px; cursor: pointer; }
+.mbtn.cancel { background: #f0f0f0; color: #666; }
+.mbtn.save { background: #1e6fff; color: #fff; }
+
+/* 生成成功提示 */
+.toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 14px; z-index: 2000; display: none; }
+</style>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- SD_PAGE_SKIN_START -->
+<style id="sd-page-skin">
+/* ============================================================
+   SD 页面皮肤层 —— 通用基线（SPEC.md §3/§4/§5 对齐）
+   注入位置：各页 <head> 内 css/sdtheme.css 之后
+   原则：只覆盖视觉属性；绝不覆盖 display（弹层由 JS 切 display）
+   ============================================================ */
+
+/* ---------------- SPEC §3 二级页 header ---------------- */
+/* 注意：不覆盖 position/top/left/right/z-index —— chaxun/xiangqing 的 header 是
+   position:fixed 且 chaxun 的 JS(alignList) 依赖其实测高度；只改视觉属性。 */
+html body .header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    box-shadow: none !important;
+    padding: 12px 16px !important;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+html body .header .back-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    max-width: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    color: #1677FF !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .header .back-icon,
+html body .header .back-btn img {
+    width: 10px !important;
+    height: 10px !important;
+    object-fit: contain !important;
+    filter: none !important;
+    display: block !important;
+}
+/* 图片箭头统一替换为 CSS 矢量箭头（10×10 的 jt.png 放大到 18px 会糊；颜色统一 #1677FF） */
+html body .header .back-btn:has(img) img { display: none !important; }
+html body .header .back-btn:has(img)::before {
+    content: '' !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 4px !important;
+    border-left: 1.6px solid #1677FF !important;
+    border-bottom: 1.6px solid #1677FF !important;
+    transform: rotate(45deg) !important;
+}
+/* 只有箭头、没有「返回」文字的页（jingyingsuode / shenbao_jilu）补出 SPEC .backText 文案 */
+html body .header .back-btn:has(img):not(:has(span))::after {
+    content: '返回' !important;
+    font-size: 16px !important;
+    color: #1677FF !important;
+    margin-left: 2px !important;
+}
+html body .header .header-title,
+html body .header h1,
+html body .header h1.header-title,
+html body .header button.header-title {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    color: #1A1A1A !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-family: inherit !important;
+}
+html body .header .header-right,
+html body .header .header-link,
+html body .header .header-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    text-align: right !important;
+    color: #1677FF !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* ---------------- 底栏避让（SPEC TabBarChrome: height 86） ---------------- */
+html body {
+    padding-bottom: var(--sd-nav-clearance, 86px) !important;
+    background: #F5F6FA !important;
+}
+
+/* ---------------- SPEC §5 弹层：层级必须高于胶囊导航(z-index 9000) ---------------- */
+html body .mask,
+html body .edit-mask,
+html body .picker-overlay,
+html body .modal-mask,
+html body .year-overlay,
+html body .modal-root {
+    z-index: 9500 !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+html body .modal,
+html body .edit-modal,
+html body .modal-panel,
+html body .year-sheet,
+html body .year-picker {
+    z-index: 9501 !important;
+    background: #fff !important;
+}
+html body .toast,
+html body #toast {
+    z-index: 9600 !important;
+}
+/* 居中深色圆角提示（SPEC：居中弹窗体系） */
+html body .toast {
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    max-width: 76% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+}
+html body .toast.show,
+html body .toast.visible,
+html body .toast.active {
+    transform: translate(-50%, -50%) !important;
+}
+
+/* ---------------- SPEC §4 卡片基线 ---------------- */
+html body .card,
+html body .info-card,
+html body .detail-card,
+html body .panel,
+html body .gen-card,
+html body .grid-wrap,
+html body .type-list,
+html body .year-select,
+html body .year-select-wrap,
+html body .list-item,
+html body .record-item {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ---------------- SPEC §4 按钮 ---------------- */
+html body .btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+html body .btn-primary,
+html body .submit-btn,
+html body .save-btn,
+html body .confirm-btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+}
+html body .btn-secondary,
+html body .btn-outline {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid #1677FF !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #1677FF !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+
+/* ---------------- SPEC §4 文本色阶 ---------------- */
+html body .link-btn,
+html body .info-link { color: #1677FF !important; text-decoration: none !important; }
+html body .del-btn { color: #FF4D4F !important; text-decoration: none !important; }
+
+/* ---------------- header 左右对称（SPEC §3：左右各 70px） ---------------- */
+/* 没有右侧操作位的页补一个平衡块，让标题真正居中；有 .header-right/.header-link 的页不生成 */
+html body .header:not(:has(.header-right)):not(:has(.header-link)):not(:has(.header-btn))::after {
+    content: '' !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+}
+
+/* ---------------- 防横向溢出兜底 ----------------
+   改前多页存在 input/select 固有宽度把 body 撑宽的问题（实测 nashui_edit scrollWidth=822 vs 390），
+   这里只约束盒宽与裁掉溢出，不改任何布局语义/功能。 */
+html body input,
+html body select,
+html body textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+html body img,
+html body svg {
+    max-width: 100% !important;
+}
+html body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* nashui_edit.html —— 修改纳税数据（重点页；SPEC §3/§4/§5 全量对齐） */
+html body .header::after { content: '' !important; flex: 0 0 70px !important; }
+
+html body .content {
+    background: transparent !important;
+    padding: 16px !important;
+    padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 合规提示条 —— SPEC §4 .tip-box */
+html body .tip {
+    background: #FFF7E6 !important;
+    border: 1px solid #FFE7BA !important;
+    border-radius: 10px !important;
+    color: #B87333 !important;
+    font-size: 13px !important;
+    line-height: 20px !important;
+    padding: 12px !important;
+    margin: 0 0 12px !important;
+}
+
+/* 生成表单白卡 */
+html body .gen-card {
+    background: #fff !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+html body .gen-title {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #1A1A1A !important;
+    margin-bottom: 4px !important;
+}
+html body .form-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 14px 0 !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+}
+html body .form-label {
+    width: 100px !important;
+    flex: 0 0 100px !important;
+    font-size: 15px !important;
+    color: #666 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+html body .form-input,
+html body .form-select {
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: none !important;
+    border-radius: 0 !important;
+    font-size: 16px !important;
+    color: #1A1A1A !important;
+    padding: 6px 0 !important;
+    text-align: right !important;
+    outline: none !important;
+    font-family: inherit !important;
+    box-shadow: none !important;
+}
+html body .range-row { display: flex !important; align-items: center !important; gap: 8px !important; }
+html body .range-sep { color: #999 !important; }
+
+/* 两个按钮（主 / 次） */
+html body .btn {
+    margin-top: 16px !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+html body .btn-secondary {
+    margin-top: 10px !important;
+    background: #fff !important;
+    border: 1px solid #1677FF !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    font-size: 15px !important;
+    color: #1677FF !important;
+}
+
+/* 流水列表卡片 */
+html body .list-title-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin: 20px 0 8px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #1A1A1A !important;
+}
+html body .list-title-bar .count { font-size: 14px !important; font-weight: 400 !important; color: #999 !important; }
+html body #recordList {
+    background: #fff !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+html body #recordList .swipe-wrap { border-radius: 0 !important; background: #FF4D4F !important; }
+html body #recordList .swipe-del { background: #FF4D4F !important; color: #fff !important; border-radius: 0 !important; }
+html body #recordList .list-item {
+    background: #fff !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #F5F5F5 !important;
+    padding: 16px 20px !important;
+    margin: 0 !important;
+}
+html body #recordList .list-item:last-child { border-bottom: none !important; }
+html body .list-left .month { font-size: 18px !important; font-weight: 600 !important; color: #1A1A1A !important; }
+html body .list-left .company,
+html body .list-left .type-tag { font-size: 15px !important; color: #666 !important; }
+html body .list-right .income { font-size: 17px !important; font-weight: 600 !important; color: #1677FF !important; }
+html body .list-right .tax { font-size: 13px !important; color: #999 !important; }
+html body .hint-small { font-size: 13px !important; color: #999 !important; line-height: 1.6 !important; }
+html body .empty { font-size: 15px !important; color: #999 !important; padding: 32px 0 !important; }
+html body .tax-preview { color: #666 !important; font-size: 13px !important; }
+
+/* 编辑弹层 —— SPEC §5 居中弹窗 */
+html body .modal {
+    width: 85% !important;
+    max-width: 320px !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    background: #fff !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16) !important;
+}
+html body .modal-title { font-size: 16px !important; font-weight: 600 !important; color: #1A1A1A !important; text-align: center !important; }
+html body .modal-sub { font-size: 13px !important; color: #999 !important; line-height: 1.5 !important; }
+html body .modal-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 0 !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    font-size: 15px !important;
+    color: #666 !important;
+}
+html body .modal-item input {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    font-size: 14px !important;
+    color: #1A1A1A !important;
+    outline: none !important;
+    font-family: inherit !important;
+}
+html body .modal-btns { display: flex !important; gap: 12px !important; margin-top: 16px !important; }
+html body .mbtn {
+    flex: 1 !important;
+    height: 44px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    font-family: inherit !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .mbtn.cancel { background: #F5F5F5 !important; color: #666 !important; }
+html body .mbtn.save { background: #1677FF !important; color: #fff !important; }
+
+/* 列表行左右分栏：左侧必须可收缩，否则 15px 公司名会把右侧金额挤出卡片（改前就存在的横向溢出） */
+html body #recordList .list-left {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+html body #recordList .list-right {
+    flex: 0 0 auto !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+}
+html body #recordList .list-left .company {
+    display: block !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+html body #recordList .list-left .month { white-space: nowrap !important; }
+
+</style>
+<!-- SD_PAGE_SKIN_END -->
+</head>
+<body>
+<div class="header">
+    <a href="zixun.html" class="back-btn">‹ 返回</a>
+    <div class="header-title">修改纳税数据</div>
+</div>
+
+<div class="content">
+    <div class="tip">💡 选择时间范围（如 2024年 ~ 2025年）和月收入范围，一键生成流水。纳税额按<b>国家标准</b>计算（国家税务总局公告 2018 年第 61 号累计预扣预缴法）：累计应纳税所得额 = 累计收入 − 5000×任职月份数 − 累计三险一金个人部分（15.5%：养老8%+医疗2%+失业0.5%+公积金5%）− 累计专项附加扣除，再按七级累计预扣率表查表；缴费基数 = 本人当月工资，受当地上年度社平工资 60%~300% 上下限约束（养老 8% + 医疗 2% + 失业 0.5% + 公积金 5%）。节假日照常发工资；年终奖在 12月~次年2月 随机发放（单独计税）。生成后：<b>左滑记录可删除</b>，<b>双击记录可修改工资</b>（税额自动重新计算）。</div>
+
+    <!-- 自动生成表单 -->
+    <div class="gen-card">
+        <div class="gen-title">自动生成流水</div>
+        <div class="form-item">
+            <span class="form-label">时间范围</span>
+            <div class="range-row">
+                <select class="form-select" id="genStart"></select>
+                <span class="range-sep">~</span>
+                <select class="form-select" id="genEnd"></select>
+            </div>
+        </div>
+        <div class="form-item">
+            <span class="form-label">公司名称</span>
+            <input class="form-input" id="genCompany" placeholder="如：北京九州华海科技有限公司">
+        </div>
+        <div class="form-item">
+            <span class="form-label">月收入范围</span>
+            <div class="range-row">
+                <input class="form-input" id="genMin" type="number" placeholder="最低">
+                <span class="range-sep">~</span>
+                <input class="form-input" id="genMax" type="number" placeholder="最高">
+            </div>
+        </div>
+        <button class="btn" onclick="genAll()">一键生成流水</button>
+        <button class="btn btn-secondary" onclick="clearRange()">清空所选时间流水</button>
+    </div>
+
+    <div class="list-title-bar">已生成流水 <span class="count" id="genCount"></span></div>
+    <div class="hint-small">← 左滑删除 · 双击修改 →</div>
+    <div id="recordList"></div>
+</div>
+
+<div class="mask" id="mask" onclick="closeEdit()"></div>
+<div class="modal" id="editModal">
+    <div class="modal-title" id="editTitle">修改工资</div>
+    <div class="modal-sub" id="editSub"></div>
+    <div class="modal-item">
+        <span class="ml">公司名称</span>
+        <input type="text" id="editCompany" placeholder="输入公司名称">
+    </div>
+    <div class="modal-item">
+        <span class="ml">月收入(元)</span>
+        <input type="number" id="editIncome" placeholder="输入月收入">
+    </div>
+    <div class="modal-item">
+        <span class="ml">应纳税额</span>
+        <span class="tax-preview" id="editTax">¥0.00</span>
+    </div>
+    <div class="modal-btns">
+        <button class="mbtn cancel" onclick="closeEdit()">取消</button>
+        <button class="mbtn save" onclick="saveEdit()">保存</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var curYear = new Date().getFullYear();
+var curMonth = new Date().getMonth() + 1;
+var editingId = null;
+var lastClickTime = 0;
+var lastClickId = null;
+
+function getDB() {
+    try { return JSON.parse(localStorage.getItem('geshui_local_db_v1')) || { records: [] }; }
+    catch (e) { return { records: [] }; }
+}
+function saveDB(db) { localStorage.setItem('geshui_local_db_v1', JSON.stringify(db)); }
+
+// ============ 个税计算(国家标准) ============
+// 专项扣除(个人部分): 养老 8% + 医疗 2% + 失业 0.5% + 公积金 5%(条例下限) = 15.5%
+// 缴费基数: 本人上年度月平均工资, 受当地上年度社平工资 60%~300% 上下限约束, 同一缴费年度内固定
+//   —— 国办发〔2019〕13 号 /《社会保险费申报缴纳管理规定》/《住房公积金管理条例》第 16-18 条
+// 已申报税额: 工资薪金按累计预扣预缴法(国家税务总局公告 2018 年第 61 号)
+var SOCIAL_RATE = 0.155;      // 养老8% + 医疗2% + 失业0.5% + 公积金5%
+var AVG_WAGE_MIN = 4800;      // 缴费基数下限 = 当地上年度社平工资 × 60%  <按当地公布值填写>
+var AVG_WAGE_MAX = 24000;     // 缴费基数上限 = 当地上年度社平工资 × 300% <按当地公布值填写>
+
+function round2(v) { return Math.round((parseFloat(v) || 0) * 100) / 100; }
+// 兜底：无年度上下文时按传入收入估算
+function socialBaseOf(income) {
+    var b = parseFloat(income) || 0;
+    if (b < AVG_WAGE_MIN) b = AVG_WAGE_MIN;
+    if (b > AVG_WAGE_MAX) b = AVG_WAGE_MAX;
+    return round2(b);
+}
+// 年度缴费基数：本人上年度月平均工资 → 60%~300% clamp → 同一缴费年度内固定（按年份缓存）
+var _baseCache = {};
+function socialBaseOfYear(db, year, fallbackIncome) {
+    var key = String(year);
+    if (_baseCache[key] !== undefined) return _baseCache[key];
+    var list = ((db && db.records) || []).filter(function (r) {
+        return r.income_type !== '年终奖' && (parseFloat(r.income) || 0) > 0;
+    });
+    var prev = list.filter(function (r) { return String(r.year) === String(Number(key) - 1); });
+    var pool = prev.length ? prev : list.filter(function (r) { return String(r.year) === String(key); });
+    var b = pool.length
+        ? pool.reduce(function (t, r) { return t + (parseFloat(r.income) || 0); }, 0) / pool.length
+        : (parseFloat(fallbackIncome) || 0);
+    if (b < AVG_WAGE_MIN) b = AVG_WAGE_MIN;
+    if (b > AVG_WAGE_MAX) b = AVG_WAGE_MAX;
+    _baseCache[key] = round2(b);
+    return _baseCache[key];
+}
+function clearBaseCache() { _baseCache = {}; }
+var SOCIAL_BASE_CURRENT = 0;      // 由 recalcYear 设置为该年度基数
+function socialInsurance(income) {
+    // 国家标准: 缴费基数 = 本人当月工资, 受当地社平工资 60%~300%(AVG_WAGE_MIN/MAX)约束
+    // 与 js/local_api.js 的 socialBase()+socialInsurance() 口径完全一致
+    return round2(socialBaseOf(income) * SOCIAL_RATE);
+}
+
+// 累计预扣率表(工资薪金所得)
+var WITHHOLD_TABLE = [
+    { cap: 36000, rate: 0.03, ded: 0 },
+    { cap: 144000, rate: 0.10, ded: 2520 },
+    { cap: 300000, rate: 0.20, ded: 16920 },
+    { cap: 420000, rate: 0.25, ded: 31920 },
+    { cap: 660000, rate: 0.30, ded: 52920 },
+    { cap: 960000, rate: 0.35, ded: 85920 },
+    { cap: Infinity, rate: 0.45, ded: 181920 }
+];
+function cumulativeTax(taxable) {
+    if (taxable <= 0) return 0;
+    for (var i = 0; i < WITHHOLD_TABLE.length; i++) {
+        if (taxable <= WITHHOLD_TABLE[i].cap) {
+            return Math.max(0, round2(taxable * WITHHOLD_TABLE[i].rate - WITHHOLD_TABLE[i].ded));
+        }
+    }
+    return 0;
+}
+// 单月估算(仅用于兜底展示)
+function monthlyTax(income) {
+    var inc = parseFloat(income) || 0;
+    return cumulativeTax(inc - 5000 - socialInsurance(inc));
+}
+
+// 年终奖单独计税(财税〔2018〕164号): 年终奖/12 查月度税率表
+// 税 = 奖金 × 适用税率 - 速算扣除数(速算扣除数不乘12)
+function calcBonusTax(bonus) {
+    if (bonus <= 0) return 0;
+    var a = bonus / 12;
+    var rate, ded;
+    if (a <= 3000) { rate = 0.03; ded = 0; }
+    else if (a <= 12000) { rate = 0.10; ded = 210; }
+    else if (a <= 25000) { rate = 0.20; ded = 1410; }
+    else if (a <= 35000) { rate = 0.25; ded = 2660; }
+    else if (a <= 55000) { rate = 0.30; ded = 4410; }
+    else if (a <= 80000) { rate = 0.35; ded = 7160; }
+    else { rate = 0.45; ded = 15160; }
+    return Math.max(0, Math.round((bonus * rate - ded) * 100) / 100);
+}
+
+// ============ 时间范围选择 ============
+function initYearSelects() {
+    var opts = '';
+    for (var y = curYear; y >= 2019; y--) opts += '<option value="' + y + '">' + y + '年</option>';
+    document.getElementById('genStart').innerHTML = opts;
+    document.getElementById('genEnd').innerHTML = opts;
+    document.getElementById('genStart').value = curYear - 1;
+    document.getElementById('genEnd').value = curYear;
+    // 保证 start <= end
+    document.getElementById('genStart').addEventListener('change', function () {
+        var s = parseInt(this.value), e = parseInt(document.getElementById('genEnd').value);
+        if (s > e) document.getElementById('genEnd').value = s;
+        render();
+    });
+    document.getElementById('genEnd').addEventListener('change', function () {
+        var s = parseInt(document.getElementById('genStart').value), e = parseInt(this.value);
+        if (e < s) document.getElementById('genStart').value = e;
+        render();
+    });
+}
+
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(function () { t.style.display = 'none'; }, 3000);
+}
+
+// ============ 法定节假日 ============
+// 月份 -> {name, days: 可能的放假天数(随机)}
+var HOLIDAYS = {
+    1:  { name: '元旦', days: [1, 2, 3] },
+    2:  { name: '春节', days: [3, 4, 5, 6, 7, 8] },
+    4:  { name: '清明节', days: [3] },
+    5:  { name: '劳动节', days: [3, 4, 5] },
+    6:  { name: '端午节', days: [3] },
+    9:  { name: '中秋节', days: [3] },
+    10: { name: '国庆节', days: [3, 5, 7] }
+};
+function getHoliday(year, month) {
+    return HOLIDAYS[month] || null;
+}
+
+// 一键生成流水
+function genAll() {
+    var start = parseInt(document.getElementById('genStart').value);
+    var end = parseInt(document.getElementById('genEnd').value);
+    var company = document.getElementById('genCompany').value.trim();
+    var min = parseFloat(document.getElementById('genMin').value);
+    var max = parseFloat(document.getElementById('genMax').value);
+    if (start > end) { showToast('时间范围不正确'); return; }
+    if (!company) { showToast('请填写公司名称'); return; }
+    if (isNaN(min) || isNaN(max) || min < 0 || max < min) { showToast('请填写正确的收入范围'); return; }
+
+    var db = getDB();
+    // 清空所选时间范围内的旧记录
+    db.records = db.records.filter(function (r) {
+        return !(r.year >= start && r.year <= end);
+    });
+
+    // 逐月生成
+    var records = [];
+    for (var y = start; y <= end; y++) {
+        var maxM = (y === curYear) ? curMonth : 12;
+        for (var m = 1; m <= maxM; m++) {
+            // 收入保留两位小数(真实工资如 9231.45), 节假日照常发工资
+            var income = Math.round((min + Math.random() * (max - min)) * 100) / 100;
+            records.push({ year: y, month: m, income: income, isBonus: false });
+        }
+    }
+
+    // 年终奖: 每个"发放年度"在 12月~次年2月 随机一个月
+    // 对应归属: 该年度12月, 或次年1月/2月
+    var bonusMonths = {}; // "year-month" 去重
+    for (var y2 = start; y2 <= end; y2++) {
+        var cand = [];
+        // 当年12月(若在范围内且未到未来)
+        if (y2 < curYear || (y2 === curYear && 12 <= curMonth)) cand.push({ y: y2, m: 12 });
+        // 次年1月/2月(若次年也在范围内且未到未来)
+        if (y2 + 1 <= end) {
+            if (y2 + 1 < curYear || (y2 + 1 === curYear && 1 <= curMonth)) cand.push({ y: y2 + 1, m: 1 });
+            if (y2 + 1 < curYear || (y2 + 1 === curYear && 2 <= curMonth)) cand.push({ y: y2 + 1, m: 2 });
+        }
+        if (!cand.length) continue;
+        // 随机选一个未占用的月份
+        var pool = cand.filter(function (c) { return !bonusMonths[c.y + '-' + c.m]; });
+        if (!pool.length) continue;
+        var chosen = pool[Math.floor(Math.random() * pool.length)];
+        bonusMonths[chosen.y + '-' + chosen.m] = true;
+        // 在该月的工资基础上加年终奖(约1个月工资, 保留两位小数)
+        var avg = Math.round((min + max) / 2 * 100) / 100;
+        // 找到该月记录, 若存在则加上年终奖记录
+        var found = null;
+        for (var i = 0; i < records.length; i++) {
+            if (records[i].year === chosen.y && records[i].month === chosen.m) { found = records[i]; break; }
+        }
+        if (found) {
+            found.bonus = avg;
+            found.isBonus = true;
+        }
+    }
+
+    // 按年分组, 每月按固定小税率计算工资税
+    var byYear = {};
+    records.forEach(function (r) {
+        if (!byYear[r.year]) byYear[r.year] = [];
+        byYear[r.year].push(r);
+    });
+    var outRecords = [];
+    Object.keys(byYear).forEach(function (ys) {
+        var year = parseInt(ys);
+        var yearRecs = byYear[year].slice().sort(function (a, b) { return a.month - b.month; });
+        yearRecs.forEach(function (r) {
+            var m = r.month;
+            var rec = {
+                id: year * 100 + m,
+                year: year,
+                month: m,
+                company_name: company,
+                income_type: '工资薪金',
+                income_subtype: '正常工资薪金',
+                income: r.income,
+                tax_reported: monthlyTax(r.income),
+                report_date: year + '-' + (m < 10 ? '0' + m : m) + '-10'
+            };
+            outRecords.push(rec);
+            // 年终奖单独记录
+            if (r.bonus) {
+                outRecords.push({
+                    id: year * 100 + m * 100 + 99,
+                    year: year,
+                    month: m,
+                    company_name: company,
+                    income_type: '年终奖',
+                    income_subtype: '全年一次性奖金',
+                    income: r.bonus,
+                    tax_reported: calcBonusTax(r.bonus),
+                    report_date: year + '-' + (m < 10 ? '0' + m : m) + '-31'
+                });
+            }
+        });
+    });
+
+    outRecords.forEach(function (r) { db.records.push(r); });
+    saveDB(db);
+    // 关键: 生成后按"累计预扣法"逐年重算税额(否则每月都是独立的单月税, 不会有跨档跳增)
+    for (var yy = start; yy <= end; yy++) { recalcYear(yy); }
+    render();
+    showToast('已生成 ' + start + '~' + end + ' 年流水');
+}
+
+// 清空所选时间范围
+function clearRange() {
+    var start = parseInt(document.getElementById('genStart').value);
+    var end = parseInt(document.getElementById('genEnd').value);
+    if (!confirm('确认清空 ' + start + '~' + end + ' 年全部流水？')) return;
+    var db = getDB();
+    db.records = db.records.filter(function (r) { return !(r.year >= start && r.year <= end); });
+    saveDB(db);
+    render();
+    showToast('已清空 ' + start + '~' + end + ' 年流水');
+}
+
+// 按累计预扣法重算某年全部工资薪金记录的本期已申报税额
+function recalcYear(year) {
+    var db = getDB();
+    var yearRecs = db.records.filter(function (r) { return r.year === year; })
+        .sort(function (a, b) {
+            return (parseInt(a.month, 10) || 1) - (parseInt(b.month, 10) || 1)
+                || (a.income_type === '年终奖' ? 1 : -1);
+        });
+    var firstMonth = 1;
+    for (var k = 0; k < yearRecs.length; k++) {
+        if (yearRecs[k].income_type !== '年终奖') { firstMonth = parseInt(yearRecs[k].month, 10) || 1; break; }
+    }
+    // 口径与 js/local_api.js 的 recalcYearTax() 逐行一致:
+    //   应纳税所得额 = 累计收入 - 5000×任职月数 - 累计三险一金
+    //   专项附加扣除属于年度汇算清缴环节, 不参与本单位预扣(明细页显示的是单位申报数)
+    var cumIncome = 0, cumSocial = 0, cumTaxed = 0;
+    yearRecs.forEach(function (r) {
+        var inc = parseFloat(r.income) || 0;
+        if (r.income_type === '年终奖') { r.tax_reported = calcBonusTax(inc); return; }
+        cumIncome += inc;
+        cumSocial += socialInsurance(inc);
+        // 累计减除费用 = 5000 × 任职受雇月份数(自该年首个工资月起算)
+        var months = Math.max(1, (parseInt(r.month, 10) || 1) - firstMonth + 1);
+        var taxable = cumIncome - 5000 * months - cumSocial;
+        var cumTax = cumulativeTax(taxable);
+        r.tax_reported = round2(Math.max(0, cumTax - cumTaxed));
+        cumTaxed += r.tax_reported;
+    });
+    saveDB(db);
+}
+
+// 渲染列表
+function render() {
+    var start = parseInt(document.getElementById('genStart').value);
+    var end = parseInt(document.getElementById('genEnd').value);
+    var db = getDB();
+    var list = db.records.filter(function (r) { return r.year >= start && r.year <= end; })
+        .sort(function (a, b) { return a.year - b.year || a.month - b.month || (a.income_type === '年终奖' ? 1 : -1); });
+    document.getElementById('genCount').textContent = list.length ? list.length + ' 条' : '';
+    var html = '';
+    if (!list.length) {
+        html = '<div class="empty">暂无 ' + start + '~' + end + ' 年流水，填写上方信息后一键生成</div>';
+    }
+    list.forEach(function (r) {
+        html += '<div class="swipe-wrap">';
+        html += '<div class="swipe-del" onclick="delRecord(' + r.id + ')">删除</div>';
+        html += '<div class="list-item" data-id="' + r.id + '">';
+        html += '<div class="list-left"><div class="month">' + r.year + '年' + (r.month < 10 ? '0' : '') + r.month + '月</div>';
+        html += '<div class="company">' + r.company_name + '</div>';
+        if (r.income_type === '年终奖') html += '<div class="type-tag">年终奖</div>';
+        html += '</div>';
+        html += '<div class="list-right"><div class="income">¥' + (r.income || 0).toFixed(2) + '</div>';
+        html += '<div class="tax">税 ¥' + (r.tax_reported || 0).toFixed(2) + '</div></div>';
+        html += '</div></div>';
+    });
+    document.getElementById('recordList').innerHTML = html;
+    bindSwipe();
+    bindDoubleClick();
+}
+
+// 滑动删除
+function bindSwipe() {
+    var items = document.querySelectorAll('.list-item');
+    items.forEach(function (item) {
+        var startX = 0, startY = 0, dx = 0, dragging = false;
+        item.addEventListener('touchstart', function (e) {
+            var t = e.touches[0];
+            startX = t.clientX; startY = t.clientY;
+            dragging = true;
+            item.style.transition = 'none';
+        });
+        item.addEventListener('touchmove', function (e) {
+            if (!dragging) return;
+            var t = e.touches[0];
+            dx = t.clientX - startX;
+            var dy = Math.abs(t.clientY - startY);
+            if (dy > Math.abs(dx) && dy > 10) { dragging = false; return; }
+            if (dx < 0) {
+                item.style.transform = 'translateX(' + Math.max(dx, -76) + 'px)';
+            }
+        });
+        item.addEventListener('touchend', function () {
+            if (!dragging) return;
+            dragging = false;
+            item.style.transition = 'transform 0.25s ease';
+            if (dx < -40) {
+                document.querySelectorAll('.list-item.swiped').forEach(function (o) {
+                    if (o !== item) o.classList.remove('swiped');
+                });
+                item.classList.add('swiped');
+            } else {
+                item.classList.remove('swiped');
+            }
+            dx = 0;
+        });
+        item.addEventListener('click', function () {
+            if (item.classList.contains('swiped')) {
+                item.classList.remove('swiped');
+            }
+        });
+    });
+}
+
+// 双击修改
+function bindDoubleClick() {
+    var items = document.querySelectorAll('.list-item');
+    items.forEach(function (item) {
+        item.addEventListener('click', function (e) {
+            var id = item.getAttribute('data-id');
+            var now = Date.now();
+            if (lastClickId === id && (now - lastClickTime) < 400) {
+                openEdit(id);
+                lastClickId = null; lastClickTime = 0;
+            } else {
+                lastClickId = id;
+                lastClickTime = now;
+            }
+        });
+    });
+}
+
+// 打开编辑弹窗
+function openEdit(id) {
+    var db = getDB();
+    var rec = null;
+    for (var i = 0; i < db.records.length; i++) {
+        if (String(db.records[i].id) === String(id)) { rec = db.records[i]; break; }
+    }
+    if (!rec) return;
+    editingId = id;
+    document.getElementById('editTitle').textContent = rec.year + '年' + (rec.month < 10 ? '0' : '') + rec.month + '月';
+    document.getElementById('editSub').textContent = rec.company_name + ' · ' + rec.income_type;
+    var inc = document.getElementById('editIncome');
+    inc.value = rec.income;
+    document.getElementById('editCompany').value = rec.company_name || '';
+    var isBonus = rec.income_type === '年终奖';
+    document.getElementById('editTax').textContent = '¥' + (isBonus ? calcBonusTax(rec.income) : rec.tax_reported).toFixed(2);
+    document.getElementById('mask').style.display = 'block';
+    document.getElementById('editModal').style.display = 'block';
+    setTimeout(function () { inc.focus(); inc.select(); }, 300);
+}
+
+function closeEdit() {
+    document.getElementById('mask').style.display = 'none';
+    document.getElementById('editModal').style.display = 'none';
+    editingId = null;
+}
+
+// 收入输入时实时预览税额
+document.getElementById('editIncome').addEventListener('input', function () {
+    var v = parseFloat(this.value) || 0;
+    var isBonus = document.getElementById('editSub').textContent.indexOf('年终奖') >= 0;
+    document.getElementById('editTax').textContent = '¥' + (isBonus ? calcBonusTax(v) : monthlyTax(v)).toFixed(2);
+});
+
+// 保存修改
+function saveEdit() {
+    if (!editingId) return;
+    var v = parseFloat(document.getElementById('editIncome').value);
+    if (isNaN(v) || v < 0) { showToast('请输入正确的收入'); return; }
+    var company = document.getElementById('editCompany').value.trim();
+    var db = getDB();
+    for (var i = 0; i < db.records.length; i++) {
+        if (String(db.records[i].id) === String(editingId)) {
+            db.records[i].income = Math.round(v * 100) / 100;
+            if (company) db.records[i].company_name = company;
+            var isBonus = db.records[i].income_type === '年终奖';
+            if (isBonus) {
+                db.records[i].tax_reported = calcBonusTax(db.records[i].income);
+            }
+            break;
+        }
+    }
+    saveDB(db);
+    // 重新计算该年工资税
+    var rec = null;
+    for (var j = 0; j < db.records.length; j++) {
+        if (String(db.records[j].id) === String(editingId)) { rec = db.records[j]; break; }
+    }
+    if (rec && rec.income_type !== '年终奖') recalcYear(rec.year);
+    closeEdit();
+    render();
+    showToast('已保存，纳税额已自动重新计算');
+}
+
+function delRecord(id) {
+    if (!confirm('确认删除该条记录？')) return;
+    var db = getDB();
+    db.records = db.records.filter(function (r) { return String(r.id) !== String(id); });
+    saveDB(db);
+    // 删除后重算该年累计税
+    var year = parseInt(String(id).slice(0, 4));
+    recalcYear(year);
+    render();
+}
+
+initYearSelects();
+render();
+</script>
+<script src="js/page-loading.js"></script>
+    <script src="js/sdtab.js"></script>
+<nav class="bottom-nav"></nav>
+</body>
+</html>
