@@ -1,0 +1,3 @@
+/* 让主屏显示中文应用名（Info.plist 里已是中文，这里做兜底覆盖） */
+"CFBundleDisplayName" = "个人所得税";
+"CFBundleName" = "个人所得税";
