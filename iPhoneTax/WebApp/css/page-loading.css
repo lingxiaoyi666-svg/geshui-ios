@@ -1,0 +1,80 @@
+/* 页面加载：居中深灰圆角 HUD + iOS 12 辐条 Activity Indicator (原版) */
+#appPageLoadingRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+#appPageLoadingRoot.app-page-loading {
+  display: flex;
+}
+
+.app-page-loading {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+.app-page-loading.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.app-page-loading-box {
+  width: 90px;
+  height: 90px;
+  border-radius: 14px;
+  background: rgba(51, 51, 51, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.22);
+}
+
+.app-page-loading-spinner {
+  width: 37px;
+  height: 37px;
+  position: relative;
+}
+
+.app-page-loading-bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.5px;
+  height: 8px;
+  margin-left: -1.25px;
+  margin-top: -15px;
+  border-radius: 1.5px;
+  background: #fff;
+  transform-origin: 50% 15px;
+  opacity: 0.22;
+  animation: app-page-loading-ios-bar 1s linear infinite;
+}
+
+.app-page-loading-bar:nth-child(1) { transform: rotate(0deg);    animation-delay: -1s; }
+.app-page-loading-bar:nth-child(2) { transform: rotate(30deg);   animation-delay: -0.9167s; }
+.app-page-loading-bar:nth-child(3) { transform: rotate(60deg);   animation-delay: -0.8333s; }
+.app-page-loading-bar:nth-child(4) { transform: rotate(90deg);   animation-delay: -0.75s; }
+.app-page-loading-bar:nth-child(5) { transform: rotate(120deg);  animation-delay: -0.6667s; }
+.app-page-loading-bar:nth-child(6) { transform: rotate(150deg);  animation-delay: -0.5833s; }
+.app-page-loading-bar:nth-child(7) { transform: rotate(180deg);  animation-delay: -0.5s; }
+.app-page-loading-bar:nth-child(8) { transform: rotate(210deg);  animation-delay: -0.4167s; }
+.app-page-loading-bar:nth-child(9) { transform: rotate(240deg);  animation-delay: -0.3333s; }
+.app-page-loading-bar:nth-child(10) { transform: rotate(270deg); animation-delay: -0.25s; }
+.app-page-loading-bar:nth-child(11) { transform: rotate(300deg); animation-delay: -0.1667s; }
+.app-page-loading-bar:nth-child(12) { transform: rotate(330deg); animation-delay: -0.0833s; }
+
+@keyframes app-page-loading-ios-bar {
+  0% { opacity: 1; }
+  100% { opacity: 0.22; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-page-loading-bar {
+    animation-duration: 1.35s;
+  }
+}
