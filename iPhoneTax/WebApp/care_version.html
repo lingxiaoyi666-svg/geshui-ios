@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>切换关怀版</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f6fa; min-height: 100vh; }
+.header { background: #fff; padding: 15px 16px; display: flex; align-items: center; position: relative; border-bottom: 1px solid #f0f0f0; }
+.back-btn { position: absolute; left: 16px; color: #1e6fff; font-size: 16px; text-decoration: none; }
+.header-title { font-size: 17px; font-weight: 500; color: #333; margin: 0 auto; }
+.header-right { position: absolute; right: 16px; color: #1e6fff; font-size: 15px; text-decoration: none; }
+.content { padding: 16px; padding-bottom: 30px; }
+.card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.card-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.list-item { background: #fff; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.list-title { font-size: 15px; font-weight: 600; color: #333; }
+.list-date { font-size: 12px; color: #999; }
+.list-row { font-size: 13px; color: #666; margin-top: 3px; }
+.list-actions { display: flex; gap: 16px; margin-top: 8px; }
+.link-btn { color: #1e6fff; font-size: 13px; text-decoration: none; }
+.del-btn { color: #ff3b30; font-size: 13px; text-decoration: none; }
+.empty { text-align: center; color: #999; font-size: 14px; padding: 40px 0; }
+.modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
+.modal-panel { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 16px 16px 0 0; z-index: 1000; padding: 20px; display: none; }
+.form-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.form-label { width: 90px; font-size: 14px; color: #666; flex-shrink: 0; }
+.form-input { flex: 1; border: none; outline: none; font-size: 15px; color: #333; padding: 4px 0; }
+.form-select { flex: 1; border: none; outline: none; font-size: 15px; color: #333; background: #fff; }
+.btn { display: block; width: 100%; height: 44px; background: #1e6fff; border: none; border-radius: 22px; font-size: 16px; color: #fff; margin-top: 16px; }
+.info-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+.info-label { color: #666; }
+.info-value { color: #333; }
+</style>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- ===== sd-spec 视觉对齐层（只覆盖外观，不改任何功能/逻辑/文案） ===== -->
+<style id="sd-spec-override">
+/* 二级页 header —— SPEC §3：白底 / 1px #F0F0F0 下边线 / 标题 18px 600 #1A1A1A / 返回 16px #1677FF */
+body .header{background:#FFFFFF!important;color:#1A1A1A!important;border-bottom:1px solid #F0F0F0!important;box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:0!important;padding:12px 16px!important;position:sticky!important;top:0!important;z-index:900!important}
+body .header::after{content:''!important;flex:0 0 70px;width:70px;min-width:70px}
+body .header .back-btn{position:static!important;left:auto!important;right:auto!important;flex:0 0 70px!important;width:70px;display:flex!important;align-items:center!important;gap:2px!important;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important;line-height:1.2!important;background:none!important;border:none!important}
+body .header .header-title{flex:1 1 auto!important;min-width:0!important;margin:0!important;text-align:center!important;font-size:18px!important;font-weight:600!important;color:#1A1A1A!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .header .header-link,body .header .header-right{position:static!important;flex:0 0 70px!important;width:70px;text-align:right;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important}
+/* 页面底色 + 底部胶囊导航留白（SPEC §1 TabBarChrome.height = 86） */
+html,body{background:#F5F6FA!important}
+body{padding-bottom:86px!important}
+/* 内容区（SPEC §4 scrollContent） */
+.content{padding:16px!important;padding-bottom:24px!important}
+/* 卡片（SPEC §4 card） */
+.card{background:#FFFFFF!important;border-radius:12px!important;padding:16px!important;margin:0 0 12px!important;box-shadow:none!important}
+.card-title{font-size:16px!important;font-weight:600!important;color:#1A1A1A!important;margin-bottom:12px!important}
+/* 信息行（SPEC §4 form-item） */
+.info-item{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:14px 0!important;border-bottom:1px solid #F0F0F0!important;font-size:15px!important}
+.info-item:last-child{border-bottom:none!important}
+.info-label{font-size:15px!important;color:#666666!important}
+.info-value{font-size:16px!important;color:#1A1A1A!important}
+/* 主按钮（SPEC §4 btn-primary） */
+.btn{display:block!important;width:100%!important;height:auto!important;background:#1677FF!important;border:none!important;border-radius:8px!important;padding:14px 0!important;font-size:17px!important;font-weight:500!important;color:#FFFFFF!important;margin-top:16px!important}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <a href="index.html" class="back-btn">‹ 返回</a>
+    <div class="header-title">切换关怀版</div>
+</div>
+<div class="content">
+    <div class="card">
+        <div class="card-title">关怀模式设置</div>
+        <div class="info-item"><span class="info-label">大字体模式</span><span class="info-value" id="bigFont">关闭</span></div>
+        <div class="info-item"><span class="info-label">语音播报</span><span class="info-value" id="voice">关闭</span></div>
+        <div class="info-item"><span class="info-label">高对比度</span><span class="info-value" id="contrast">关闭</span></div>
+        <button class="btn" onclick="toggleBigFont()">开启关怀模式</button>
+    </div>
+</div>
+<script>
+function toggleBigFont() {
+    var on = document.getElementById('bigFont').textContent === '关闭';
+    document.getElementById('bigFont').textContent = on ? '开启' : '关闭';
+    document.body.style.fontSize = on ? '20px' : '';
+    alert(on ? '已开启关怀模式（大字体）' : '已关闭关怀模式');
+}
+</script>
+<script src="js/page-loading.js"></script>
+    <nav class="bottom-nav"></nav>
+    <script src="js/sdtab.js"></script>
+</body>
+</html>
