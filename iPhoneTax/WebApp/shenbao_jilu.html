@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/apple.js"></script>
+<script>
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        body {
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        * {
+            -webkit-touch-callout: none;
+        }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function (e) {
+        if (e.key === "F12") e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+            e.preventDefault();
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+            e.preventDefault();
+        }
+    });
+    DisableDevtool({
+        disableMenu: true,
+        clearLog: true,
+        ondevtoolopen() {
+            document.documentElement.innerHTML = `
+                <div style="
+                    width:100vw;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    font-size:22px;
+                    background:#000;
+                    color:#fff;">
+                    暂无权限访问
+                </div>
+            `;
+            setTimeout(() => {
+                location.href = "about:blank";
+            }, 800);
+        }
+    });
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>申报记录</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f6fa;
+            min-height: 100vh;
+            color: #333;
+        }
+        .header {
+            background: #fff;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            border-bottom: 1px solid #eee;
+        }
+        .back-btn {
+            position: absolute;
+            left: 12px;
+            color: #1e6fff;
+            font-size: 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .header-title {
+            font-size: 17px;
+            font-weight: 500;
+            color: #333;
+            padding: 0 48px;
+            text-align: center;
+            line-height: 1.35;
+        }
+        button.header-title {
+            display: block;
+            width: 100%;
+            border: none;
+            background: none;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button.header-title.header-title--add {
+            cursor: pointer;
+        }
+        button.header-title.header-title--add:active {
+            opacity: 0.88;
+        }
+        .tabs {
+            display: flex;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+        }
+        .tab {
+            flex: 1;
+            border: none;
+            background: none;
+            padding: 12px 8px 10px;
+            font-size: 15px;
+            color: #333;
+            font-family: inherit;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tab.active {
+            color: #1e6fff;
+            font-weight: 500;
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 3px;
+            background: #1e6fff;
+            border-radius: 2px;
+        }
+        .notice {
+            margin: 12px 16px 0;
+            padding: 12px 14px;
+            background: #e8f3ff;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.65;
+            color: #666;
+        }
+        .notice a {
+            color: #1e6fff;
+            text-decoration: none;
+        }
+        #tabContent {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .empty-wrap {
+            padding: 24px 16px 48px;
+        }
+        .empty-illustration {
+            max-width: min(520px, 92vw);
+            margin: 0 auto;
+        }
+        .empty-illustration img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .empty-text {
+            text-align: center;
+            color: #999;
+            font-size: 15px;
+            margin-top: 16px;
+        }
+        .record-list {
+            margin-top: 8px;
+        }
+        .record-group-label {
+            padding: 10px 16px 8px;
+            font-size: 14px;
+            color: #999;
+            background: #f5f6fa;
+        }
+        .record-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            border: none;
+            background: #fff;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            font-family: inherit;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .record-item:active {
+            background: #fafafa;
+        }
+        .record-item.is-longpress {
+            background: #f0f6ff;
+        }
+        .record-item-body {
+            flex: 1;
+            min-width: 0;
+            padding-right: 8px;
+        }
+        .record-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 6px;
+        }
+        .record-sub {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.45;
+        }
+        .record-amount {
+            margin-top: 4px;
+        }
+        .record-chevron {
+            flex-shrink: 0;
+            font-size: 22px;
+            color: #ccc;
+            font-weight: 300;
+            line-height: 1;
+        }
+    </style>
+<script src="js/local_api.js"></script>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- SD_PAGE_SKIN_START -->
+<style id="sd-page-skin">
+/* ============================================================
+   SD 页面皮肤层 —— 通用基线（SPEC.md §3/§4/§5 对齐）
+   注入位置：各页 <head> 内 css/sdtheme.css 之后
+   原则：只覆盖视觉属性；绝不覆盖 display（弹层由 JS 切 display）
+   ============================================================ */
+
+/* ---------------- SPEC §3 二级页 header ---------------- */
+/* 注意：不覆盖 position/top/left/right/z-index —— chaxun/xiangqing 的 header 是
+   position:fixed 且 chaxun 的 JS(alignList) 依赖其实测高度；只改视觉属性。 */
+html body .header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    box-shadow: none !important;
+    padding: 12px 16px !important;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+html body .header .back-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    max-width: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    color: #1677FF !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .header .back-icon,
+html body .header .back-btn img {
+    width: 10px !important;
+    height: 10px !important;
+    object-fit: contain !important;
+    filter: none !important;
+    display: block !important;
+}
+/* 图片箭头统一替换为 CSS 矢量箭头（10×10 的 jt.png 放大到 18px 会糊；颜色统一 #1677FF） */
+html body .header .back-btn:has(img) img { display: none !important; }
+html body .header .back-btn:has(img)::before {
+    content: '' !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 4px !important;
+    border-left: 1.6px solid #1677FF !important;
+    border-bottom: 1.6px solid #1677FF !important;
+    transform: rotate(45deg) !important;
+}
+/* 只有箭头、没有「返回」文字的页（jingyingsuode / shenbao_jilu）补出 SPEC .backText 文案 */
+html body .header .back-btn:has(img):not(:has(span))::after {
+    content: '返回' !important;
+    font-size: 16px !important;
+    color: #1677FF !important;
+    margin-left: 2px !important;
+}
+html body .header .header-title,
+html body .header h1,
+html body .header h1.header-title,
+html body .header button.header-title {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    color: #1A1A1A !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-family: inherit !important;
+}
+html body .header .header-right,
+html body .header .header-link,
+html body .header .header-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    text-align: right !important;
+    color: #1677FF !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* ---------------- 底栏避让（SPEC TabBarChrome: height 86） ---------------- */
+html body {
+    background: #F5F6FA !important;
+}
+
+/* ---------------- SPEC §5 弹层：层级必须高于胶囊导航(z-index 9000) ---------------- */
+html body .mask,
+html body .edit-mask,
+html body .picker-overlay,
+html body .modal-mask,
+html body .year-overlay,
+html body .modal-root {
+    z-index: 9500 !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+html body .modal,
+html body .edit-modal,
+html body .modal-panel,
+html body .year-sheet,
+html body .year-picker {
+    z-index: 9501 !important;
+    background: #fff !important;
+}
+html body .toast,
+html body #toast {
+    z-index: 9600 !important;
+}
+/* 居中深色圆角提示（SPEC：居中弹窗体系） */
+html body .toast {
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    max-width: 76% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+}
+html body .toast.show,
+html body .toast.visible,
+html body .toast.active {
+    transform: translate(-50%, -50%) !important;
+}
+
+/* ---------------- SPEC §4 卡片基线 ---------------- */
+html body .card,
+html body .info-card,
+html body .detail-card,
+html body .panel,
+html body .gen-card,
+html body .grid-wrap,
+html body .type-list,
+html body .year-select,
+html body .year-select-wrap,
+html body .list-item,
+html body .record-item {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ---------------- SPEC §4 按钮 ---------------- */
+html body .btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+html body .btn-primary,
+html body .submit-btn,
+html body .save-btn,
+html body .confirm-btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+}
+html body .btn-secondary,
+html body .btn-outline {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid #1677FF !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #1677FF !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+
+/* ---------------- SPEC §4 文本色阶 ---------------- */
+html body .link-btn,
+html body .info-link { color: #1677FF !important; text-decoration: none !important; }
+html body .del-btn { color: #FF4D4F !important; text-decoration: none !important; }
+
+/* ---------------- header 左右对称（SPEC §3：左右各 70px） ---------------- */
+/* 没有右侧操作位的页补一个平衡块，让标题真正居中；有 .header-right/.header-link 的页不生成 */
+html body .header:not(:has(.header-right)):not(:has(.header-link)):not(:has(.header-btn))::after {
+    content: '' !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+}
+
+/* ---------------- 防横向溢出兜底 ----------------
+   改前多页存在 input/select 固有宽度把 body 撑宽的问题（实测 nashui_edit scrollWidth=822 vs 390），
+   这里只约束盒宽与裁掉溢出，不改任何布局语义/功能。 */
+html body input,
+html body select,
+html body textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+html body img,
+html body svg {
+    max-width: 100% !important;
+}
+html body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* shenbao_jilu.html —— 申报记录（tabs + 列表 + 空态） */
+html body .header::after { content: '' !important; flex: 0 0 70px !important; }
+
+html body .tabs {
+    display: flex !important;
+    background: #fff !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+html body .tab {
+    flex: 1 !important;
+    position: relative !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 12px 8px 10px !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    color: #666 !important;
+    font-family: inherit !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .tab.active { color: #1677FF !important; font-weight: 600 !important; }
+html body .tab.active::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 50% !important;
+    bottom: 0 !important;
+    transform: translateX(-50%) !important;
+    width: 28px !important;
+    height: 3px !important;
+    background: #1677FF !important;
+    border-radius: 2px !important;
+}
+
+html body .notice {
+    background: #E6F4FF !important;
+    border-radius: 10px !important;
+    color: #666 !important;
+    font-size: 13px !important;
+    line-height: 20px !important;
+    padding: 12px 14px !important;
+    margin: 12px 16px 0 !important;
+}
+html body .notice a { color: #1677FF !important; text-decoration: none !important; }
+
+html body #tabContent { padding-bottom: 0 !important; }
+
+html body .empty-wrap {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    padding: 32px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+}
+html body .empty-text { font-size: 15px !important; color: #999 !important; text-align: center !important; }
+html body .empty-illustration { max-width: 60% !important; height: auto !important; }
+
+html body .record-list { background: transparent !important; padding: 0 !important; margin: 0 !important; }
+html body .record-item {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    border-bottom: none !important;
+}
+html body .record-title { font-size: 18px !important; font-weight: 600 !important; color: #1A1A1A !important; }
+html body .record-sub { font-size: 15px !important; color: #666 !important; line-height: 22px !important; }
+html body .record-amount { font-size: 17px !important; font-weight: 600 !important; color: #1677FF !important; }
+html body .record-group-label { font-size: 15px !important; color: #666 !important; }
+html body .record-chevron { color: #C4C9D4 !important; }
+
+</style>
+<!-- SD_PAGE_SKIN_END -->
+</head>
+<body class="page-shenbao-jilu">
+    <div class="header">
+        <a href="bancha.html" class="back-btn" aria-label="返回"><img src="jt.png" class="back-icon" alt="" width="9" decoding="async"><span>返回</span></a>
+        <button type="button" class="header-title" id="headerTitleBtn" aria-label="申报记录（更正/作废申报）">申报记录（更正/作废申报）</button>
+    </div>
+    <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="pending" role="tab" aria-selected="true">未完成</button>
+        <button type="button" class="tab" data-tab="done" role="tab" aria-selected="false">已完成</button>
+        <button type="button" class="tab" data-tab="void" role="tab" aria-selected="false">已作废</button>
+    </div>
+    <div class="notice">
+        如您存在未支付完成的订单，则该申报表无法更正和作废；如需更正和作废，请15分钟后再试，或直接至<a href="daiban.html">支付订单管理</a>取消订单后再操作。
+    </div>
+    <div id="tabContent" class="is-empty" role="tabpanel">
+        <div class="empty-wrap">
+            <div class="empty-illustration">
+                <img src="shuiming_empty.png" alt="页面空空如也" loading="lazy" decoding="async">
+            </div>
+        </div>
+    </div>
+
+    <script src="js/watermark.js"></script>
+<script src="js/page-loading.js"></script>
+    <script src="js/sdtab.js"></script>
+</body>
+</html>
