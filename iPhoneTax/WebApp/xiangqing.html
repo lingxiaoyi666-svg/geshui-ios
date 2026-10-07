@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+<script>
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        body {
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        * {
+            -webkit-touch-callout: none;
+        }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function (e) {
+        if (e.key === "F12") e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+            e.preventDefault();
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+            e.preventDefault();
+        }
+    });
+    DisableDevtool({
+        disableMenu: true,
+        clearLog: true,
+        ondevtoolopen() {
+            document.documentElement.innerHTML = `
+                <div style="
+                    width:100vw;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    font-size:22px;
+                    background:#000;
+                    color:#fff;">
+                    暂无权限访问
+                </div>
+            `;
+            setTimeout(() => {
+                location.href = "about:blank";
+            }, 800);
+        }
+    });
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>收入纳税明细详情</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f6fa;
+            min-height: 100vh;
+            padding-top: 45px;
+            padding-bottom: 30px;
+        }
+        /* 顶部导航 */
+        .header {
+            background: #fff;
+            padding: 10px 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            border-bottom: 1px solid #eee;
+        }
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            color: #1e6fff;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            font-size: 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .header-title {
+            font-size: 17px;
+            font-weight: 500;
+            color: #333;
+        }
+        .header-right {
+            position: absolute;
+            right: 16px;
+            color: #1e6fff;
+            font-size: 15px;
+            text-decoration: none;
+        }
+        /* 区块标题 */
+        .section-title {
+            padding: 10px 16px 12px;
+            font-size: 15px;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+        }
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: #1e6fff;
+            border-radius: 2px;
+        }
+        /* 信息卡片 */
+        .info-card {
+            background: #fff;
+            margin: 0 0px;
+            border-radius: 8px;
+            padding: 0 16px;
+            padding-top: 5px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 11px 0;
+        }
+        .info-label {
+            font-size: 15px;
+            color: #999;
+            flex-shrink: 0;
+            width: 100px;
+        }
+        .info-value {
+            font-size: 15px;
+            color: #333;
+            text-align: right;
+            flex: 1;
+        }
+        .info-link {
+            font-size: 14px;
+            color: #1e6fff;
+            text-align: right;
+            flex: 1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        /* 温馨提示 */
+        .tips {
+            background: #e6f6ff;
+            margin: 0px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #494747;
+            line-height: 1.6;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .tips-link {
+            color: #1e6fff;
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        /* 本期收入与扣除详情 */
+        .detail-card {
+            background: #fff;
+            margin: 0 0px;
+            border-radius: 8px;
+            padding-top: 5px;
+            padding-left: 15px;
+            padding-right: 25px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        .detail-label {
+            font-size: 15px;
+            color: #999;
+            width: 150px;
+            flex-shrink: 0;
+        }
+        /* 展开的专项扣除明细行: 行距对齐官方 48.2px */
+        #specialDeductionDetail .detail-row {
+            padding: 13px 0;
+        }
+        .detail-value {
+            font-size: 15px;
+            color: #333;
+        }
+        /* 可双击编辑的字段 */
+        [data-field] {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 编辑弹窗 */
+        .edit-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 999;
+            display: none;
+        }
+        .edit-mask.show {
+            display: block;
+        }
+        .edit-modal {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 320px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+        }
+        .edit-modal.show {
+            display: block;
+        }
+        .edit-title {
+            font-size: 15px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .edit-input {
+            width: 100%;
+            height: 42px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 15px;
+            color: #333;
+            outline: none;
+        }
+        .edit-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .edit-btn {
+            flex: 1;
+            height: 40px;
+            border: none;
+            border-radius: 20px;
+            font-size: 15px;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        .edit-btn.cancel {
+            background: #f2f3f5;
+            color: #666;
+        }
+        .edit-btn.primary {
+            background: #1e6fff;
+            color: #fff;
+        }
+        /* 轻提示 */
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 80px;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            font-size: 13px;
+            padding: 8px 16px;
+            border-radius: 16px;
+            z-index: 1100;
+            display: none;
+        }
+        .toast.show {
+            display: block;
+        }
+    </style>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- SD_PAGE_SKIN_START -->
+<style id="sd-page-skin">
+/* ============================================================
+   SD 页面皮肤层 —— 通用基线（SPEC.md §3/§4/§5 对齐）
+   注入位置：各页 <head> 内 css/sdtheme.css 之后
+   原则：只覆盖视觉属性；绝不覆盖 display（弹层由 JS 切 display）
+   ============================================================ */
+
+/* ---------------- SPEC §3 二级页 header ---------------- */
+/* 注意：不覆盖 position/top/left/right/z-index —— chaxun/xiangqing 的 header 是
+   position:fixed 且 chaxun 的 JS(alignList) 依赖其实测高度；只改视觉属性。 */
+html body .header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    box-shadow: none !important;
+    padding: 12px 16px !important;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+html body .header .back-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    max-width: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    color: #1677FF !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .header .back-icon,
+html body .header .back-btn img {
+    width: 10px !important;
+    height: 10px !important;
+    object-fit: contain !important;
+    filter: none !important;
+    display: block !important;
+}
+/* 图片箭头统一替换为 CSS 矢量箭头（10×10 的 jt.png 放大到 18px 会糊；颜色统一 #1677FF） */
+html body .header .back-btn:has(img) img { display: none !important; }
+html body .header .back-btn:has(img)::before {
+    content: '' !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 4px !important;
+    border-left: 1.6px solid #1677FF !important;
+    border-bottom: 1.6px solid #1677FF !important;
+    transform: rotate(45deg) !important;
+}
+/* 只有箭头、没有「返回」文字的页（jingyingsuode / shenbao_jilu）补出 SPEC .backText 文案 */
+html body .header .back-btn:has(img):not(:has(span))::after {
+    content: '返回' !important;
+    font-size: 16px !important;
+    color: #1677FF !important;
+    margin-left: 2px !important;
+}
+html body .header .header-title,
+html body .header h1,
+html body .header h1.header-title,
+html body .header button.header-title {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    color: #1A1A1A !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-family: inherit !important;
+}
+html body .header .header-right,
+html body .header .header-link,
+html body .header .header-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    text-align: right !important;
+    color: #1677FF !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* ---------------- 底栏避让：本页属于「收入纳税明细」链路，不显示底栏，故不加让位 ---------------- */
+html body {
+    padding-bottom: 0 !important;
+    background: #F5F6FA !important;
+}
+
+/* ---------------- SPEC §5 弹层：层级必须高于胶囊导航(z-index 9000) ---------------- */
+html body .mask,
+html body .edit-mask,
+html body .picker-overlay,
+html body .modal-mask,
+html body .year-overlay,
+html body .modal-root {
+    z-index: 9500 !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+html body .modal,
+html body .edit-modal,
+html body .modal-panel,
+html body .year-sheet,
+html body .year-picker {
+    z-index: 9501 !important;
+    background: #fff !important;
+}
+html body .toast,
+html body #toast {
+    z-index: 9600 !important;
+}
+/* 居中深色圆角提示（SPEC：居中弹窗体系） */
+html body .toast {
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    max-width: 76% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+}
+html body .toast.show,
+html body .toast.visible,
+html body .toast.active {
+    transform: translate(-50%, -50%) !important;
+}
+
+/* ---------------- SPEC §4 卡片基线 ---------------- */
+html body .card,
+html body .info-card,
+html body .detail-card,
+html body .panel,
+html body .gen-card,
+html body .grid-wrap,
+html body .type-list,
+html body .year-select,
+html body .year-select-wrap,
+html body .list-item,
+html body .record-item {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ---------------- SPEC §4 按钮 ---------------- */
+html body .btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+html body .btn-primary,
+html body .submit-btn,
+html body .save-btn,
+html body .confirm-btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+}
+html body .btn-secondary,
+html body .btn-outline {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid #1677FF !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #1677FF !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+
+/* ---------------- SPEC §4 文本色阶 ---------------- */
+html body .link-btn,
+html body .info-link { color: #1677FF !important; text-decoration: none !important; }
+html body .del-btn { color: #FF4D4F !important; text-decoration: none !important; }
+
+/* ---------------- header 左右对称（SPEC §3：左右各 70px） ---------------- */
+/* 没有右侧操作位的页补一个平衡块，让标题真正居中；有 .header-right/.header-link 的页不生成 */
+html body .header:not(:has(.header-right)):not(:has(.header-link)):not(:has(.header-btn))::after {
+    content: '' !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+}
+
+/* ---------------- 防横向溢出兜底 ----------------
+   改前多页存在 input/select 固有宽度把 body 撑宽的问题（实测 nashui_edit scrollWidth=822 vs 390），
+   这里只约束盒宽与裁掉溢出，不改任何布局语义/功能。 */
+html body input,
+html body select,
+html body textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+html body img,
+html body svg {
+    max-width: 100% !important;
+}
+html body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* xiangqing.html —— 收入纳税明细详情 */
+/* 本页 header 是 position:fixed（不能改，页面靠 body padding-top 让位）；
+   新规格 header 内边距 12px/16px + 标题 18px → 实测高约 47.4px，故让位值由 45px 提到 48px */
+html body { padding-top: 48px !important; }
+html body .section-title {
+    position: relative !important;
+    padding: 12px 16px 10px 15px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #1A1A1A !important;
+    background: #fff !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+}
+html body .section-title::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 3px !important;
+    height: 16px !important;
+    background: #1677FF !important;
+    border-radius: 2px !important;
+}
+
+html body .info-card,
+html body .detail-card {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    padding: 0 16px !important;
+}
+html body .info-row {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 14px 0 !important;
+    border-bottom: 1px solid #F5F5F5 !important;
+}
+html body .info-row:last-child { border-bottom: none !important; }
+html body .info-label { width: 100px !important; flex: 0 0 100px !important; font-size: 15px !important; color: #666 !important; }
+html body .info-value { flex: 1 1 auto !important; font-size: 15px !important; color: #1A1A1A !important; text-align: right !important; word-break: break-all !important; }
+html body .info-link { color: #1677FF !important; font-size: 14px !important; text-decoration: none !important; }
+
+/* 信息提示条（新版主色浅底） */
+html body .tips {
+    background: #E6F4FF !important;
+    border-radius: 10px !important;
+    color: #666 !important;
+    font-size: 13px !important;
+    line-height: 20px !important;
+    padding: 12px !important;
+    margin: 8px 0 0 !important;
+}
+html body .tips a,
+html body .tips-link { color: #1677FF !important; text-decoration: none !important; }
+
+html body .detail-row { display: flex !important; align-items: flex-start !important; gap: 12px !important; padding: 12px 0 !important; border-bottom: 1px solid #F5F5F5 !important; }
+html body .detail-row:last-child { border-bottom: none !important; }
+html body .detail-label { width: 150px !important; flex: 0 0 150px !important; font-size: 15px !important; color: #666 !important; }
+html body .detail-value { flex: 1 1 auto !important; font-size: 15px !important; color: #1A1A1A !important; word-break: break-all !important; }
+
+/* 编辑弹层 —— SPEC §5 */
+html body .edit-modal {
+    width: 85% !important;
+    max-width: 320px !important;
+    background: #fff !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16) !important;
+}
+html body .edit-title { font-size: 16px !important; font-weight: 600 !important; color: #1A1A1A !important; margin-bottom: 12px !important; }
+html body .edit-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    font-size: 14px !important;
+    color: #1A1A1A !important;
+    outline: none !important;
+    font-family: inherit !important;
+}
+html body .edit-actions { display: flex !important; justify-content: flex-end !important; gap: 8px !important; margin-top: 12px !important; }
+html body .edit-btn {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    border-radius: 8px !important;
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+    line-height: 1.3 !important;
+    font-family: inherit !important;
+}
+html body .edit-btn.cancel { background: #F5F5F5 !important; color: #666 !important; border: none !important; }
+html body .edit-btn.primary { background: #1677FF !important; color: #fff !important; border: none !important; }
+
+</style>
+<!-- SD_PAGE_SKIN_END -->
+</head>
+<body>
+<!-- 顶部导航 -->
+<div class="header">
+    <a href="#" id="backBtn" class="back-btn">
+        <img src="jt.png" style="width: 9px; vertical-align: middle;">
+        <span>返回</span>
+    </a>
+    <span class="header-title">收入纳税明细详情</span>
+    <a href="#" class="header-right">申诉</a>
+</div>
+<!-- 纳税明细信息 -->
+<div class="section-title" style="border-bottom: 1px solid #cccccc59;">纳税明细信息</div>
+<div class="info-card">
+    <div class="info-row">
+        <span class="info-label">收入:</span>
+        <span class="info-value" data-field="income">0.00元</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">已申报税额:</span>
+        <span class="info-value" data-field="tax_reported">0.00元</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label"></span>
+        <a href="javascript:goTaxCalculation()" class="info-link">查看税款计算 &gt;</a>
+    </div>
+</div>
+<!-- 纳税明细-基础情况 -->
+<div class="section-title" style="margin-top: 10px; border-bottom: 1px solid #cccccc59;">纳税明细-基础情况</div>
+<div class="info-card">
+    <div class="info-row">
+        <span class="info-label">所得项目小类:</span>
+        <span class="info-value" data-field="income_subtype">—</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">扣缴义务人名称:</span>
+        <span class="info-value" data-field="company_name">—</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">扣缴义务人纳税人识别号:</span>
+        <span class="info-value" data-field="company_tax_id">—</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">主管税务机关:</span>
+        <span class="info-value" data-field="tax_authority">—</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">申报渠道:</span>
+        <span class="info-value" data-field="report_channel">其他</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">申报日期:</span>
+        <span class="info-value" data-field="report_date">—</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">税款所属期:</span>
+        <span class="info-value" data-field="tax_period">—</span>
+    </div>
+</div>
+<!-- 温馨提示 -->
+<div class="tips">
+    温馨提示：专项附加扣除已按《个人所得税专项附加扣除暂行办法》(国发〔2018〕41 号)计入累计预扣预缴应纳税所得额，在本期数据中不予显示。您可在"税款计算-累计收入与扣除详情"中查看。<a href="javascript:goTaxCalculation()" class="tips-link">查看税款计算</a>
+</div>
+<!-- 本期收入与扣除详情 -->
+<div class="section-title" style="border-bottom: 1px solid #cccccc59;">本期收入与扣除详情</div>
+<div class="detail-card">
+    <div class="detail-row">
+        <span class="detail-label">本期收入:</span>
+        <span class="detail-value" data-field="period_income">0.00元</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">本期免税收入:</span>
+        <span class="detail-value" data-field="period_tax_free">0.00元</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">本期减除费用:</span>
+        <span class="detail-value" data-field="period_deduction">0.00元</span>
+    </div>
+    <div class="detail-row" style="position: relative;">
+        <span class="detail-label">本期专项扣除:</span>
+        <span class="detail-value" data-field="period_special">0.00元</span>
+        <svg id="specialDeductionArrow" viewBox="0 0 1024 1024" width="12" height="12" style="position: absolute;right: -17px;top: 10px;transform: rotate(0deg);" onclick="toggleSpecialDeduction()"><path d="M1024 255.996 511.971 767.909 0 255.996 1024 255.996z" fill="#272636"></path></svg>
+    </div>
+    <!-- 专项扣除详情 -->
+    <div id="specialDeductionDetail" style="display: none; margin: 0 -25px 0 -15px; padding: 8px 25px 8px 35px; background: #f9fafd;">
+        <div class="detail-row">
+            <span class="detail-label">基本养老保险:</span>
+            <span class="detail-value" data-field="period_pension">0.00元</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">基本医疗保险:</span>
+            <span class="detail-value" data-field="period_medical">0.00元</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">失业保险:</span>
+            <span class="detail-value" data-field="period_unemployment">0.00元</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">住房公积金:</span>
+            <span class="detail-value" data-field="period_housing">0.00元</span>
+        </div>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">本期其他扣除:</span>
+        <span class="detail-value" data-field="period_other">0.00元</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">本期准予扣除的捐赠项目:</span>
+        <span class="detail-value" data-field="period_donation">0.00元</span>
+    </div>
+</div>
+<!-- 编辑弹窗 -->
+<div class="edit-mask" id="editMask" onclick="closeEdit()"></div>
+<div class="edit-modal" id="editModal">
+    <div class="edit-title" id="editLabel">编辑</div>
+    <input type="text" class="edit-input" id="editInput">
+    <div class="edit-actions">
+        <button class="edit-btn cancel" onclick="closeEdit()">取消</button>
+        <button class="edit-btn primary" onclick="saveEdit()">保存</button>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+    // ============ 字段定义（key 对应 localStorage 记录里的字段） ============
+    var FIELDS = [
+        { key: 'income', label: '收入', type: 'money' },
+        { key: 'tax_reported', label: '已申报税额', type: 'money' },
+        { key: 'income_subtype', label: '所得项目小类', type: 'text' },
+        { key: 'company_name', label: '扣缴义务人名称', type: 'text' },
+        { key: 'company_tax_id', label: '扣缴义务人纳税人识别号', type: 'text' },
+        { key: 'tax_authority', label: '主管税务机关', type: 'text' },
+        { key: 'report_channel', label: '申报渠道', type: 'text' },
+        { key: 'report_date', label: '申报日期', type: 'text' },
+        { key: 'tax_period', label: '税款所属期', type: 'text' },
+        { key: 'period_income', label: '本期收入', type: 'money' },
+        { key: 'period_tax_free', label: '本期免税收入', type: 'money' },
+        { key: 'period_deduction', label: '本期减除费用', type: 'money' },
+        { key: 'period_special', label: '本期专项扣除', type: 'money' },
+        { key: 'period_pension', label: '基本养老保险', type: 'money' },
+        { key: 'period_medical', label: '基本医疗保险', type: 'money' },
+        { key: 'period_unemployment', label: '失业保险', type: 'money' },
+        { key: 'period_housing', label: '住房公积金', type: 'money' },
+        { key: 'period_other', label: '本期其他扣除', type: 'money' },
+        { key: 'period_donation', label: '本期准予扣除的捐赠项目', type: 'money' }
+    ];
+    function fieldDef(key) {
+        for (var i = 0; i < FIELDS.length; i++) {
+            if (FIELDS[i].key === key) return FIELDS[i];
+        }
+        return null;
+    }
+
+    // ============ 工具 ============
+    function getUrlParam(name) {
+        var m = location.search.match(new RegExp('[?&]' + name + '=([^&]+)'));
+        return m ? decodeURIComponent(m[1]) : null;
+    }
+    function getRecId() {
+        return parseInt(getUrlParam('id'), 10) || 0;
+    }
+    function pad2(n) {
+        n = parseInt(n, 10) || 0;
+        return n < 10 ? '0' + n : '' + n;
+    }
+    function formatMoney(v) {
+        return Number(v || 0).toFixed(2);
+    }
+    function round2(v) {
+        return Math.round((parseFloat(v) || 0) * 100) / 100;
+    }
+    // 缴费基数: 本人上年度月平均工资, 受当地上年度社平工资 60%~300% 上下限约束
+    var AVG_WAGE_MIN = 4800;      // <当地上年度社平工资 × 60%>
+    var AVG_WAGE_MAX = 24000;     // <当地上年度社平工资 × 300%>
+    var SOCIAL_RATE = 0.155;      // 养老8% + 医疗2% + 失业0.5% + 公积金5%(条例下限)
+    function socialBaseOf(income) {
+        var b = parseFloat(income) || 0;
+        if (b < AVG_WAGE_MIN) b = AVG_WAGE_MIN;
+        if (b > AVG_WAGE_MAX) b = AVG_WAGE_MAX;
+        return round2(b);
+    }
+    // 年度缴费基数：本人上年度月平均工资 → 60%~300% clamp → 同一缴费年度内固定
+    var _baseCache = {};
+    function socialBaseOfYear(db, year, fallbackIncome) {
+        var key = String(year);
+        if (_baseCache[key] !== undefined) return _baseCache[key];
+        var list = ((db && db.records) || []).filter(function (r) {
+            return r.income_type !== '年终奖' && (parseFloat(r.income) || 0) > 0;
+        });
+        var prev = list.filter(function (r) { return String(r.year) === String(Number(key) - 1); });
+        var pool = prev.length ? prev : list.filter(function (r) { return String(r.year) === String(key); });
+        var b = pool.length
+            ? pool.reduce(function (t, r) { return t + (parseFloat(r.income) || 0); }, 0) / pool.length
+            : (parseFloat(fallbackIncome) || 0);
+        if (b < AVG_WAGE_MIN) b = AVG_WAGE_MIN;
+        if (b > AVG_WAGE_MAX) b = AVG_WAGE_MAX;
+        _baseCache[key] = round2(b);
+        return _baseCache[key];
+    }
+    function getDB() {
+        try {
+            return JSON.parse(localStorage.getItem('geshui_local_db_v1') || '{}') || {};
+        } catch (e) {
+            return {};
+        }
+    }
+    function saveDB(db) {
+        localStorage.setItem('geshui_local_db_v1', JSON.stringify(db));
+    }
+    function findRec(db, id) {
+        var records = db.records || [];
+        for (var i = 0; i < records.length; i++) {
+            // id 可能是字符串（生成器造的记录）而 URL 参数经 parseInt 后是数字，必须宽松比较
+            if (String(records[i].id) === String(id)) return records[i];
+        }
+        return null;
+    }
+    var toastTimer = null;
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+            t.classList.remove('show');
+        }, 1500);
+    }
+    // 离线版数据层没有「主管税务机关」，按扣缴义务人名称推断
+    function guessTaxAuthority(companyName) {
+        var cities = ['北京', '上海', '广州', '深圳', '天津', '重庆', '杭州', '南京', '成都', '武汉', '西安', '苏州', '合肥'];
+        if (companyName) {
+            for (var i = 0; i < cities.length; i++) {
+                if (companyName.indexOf(cities[i]) === 0) return cities[i] + '市税务局';
+            }
+        }
+        return '—';
+    }
+    // 首次进入时给缺失字段补默认值（之后可双击修改并保存）
+    function initDefaults(rec, db) {
+        var emp = null;
+        var employers = db.employers || [];
+        for (var j = 0; j < employers.length; j++) {
+            if (employers[j].name === rec.company_name) { emp = employers[j]; break; }
+        }
+        var changed = false;
+        function setIf(key, val) {
+            if (rec[key] === undefined || rec[key] === null || rec[key] === '') {
+                rec[key] = val;
+                changed = true;
+            }
+        }
+        // 派生字段(可由收入直接算出): 每次进入都按当前算法重算。
+        // 旧版本按"本人上年度月平均工资"算缴费基数, 导致 2025/2024 显示 3720 而 2026 显示 1898;
+        // 现统一为"本人当月工资"口径, 与 js/local_api.js 的 socialBase() 完全一致。
+        function setDerived(key, val) {
+            if (rec[key] !== val) {
+                rec[key] = val;
+                changed = true;
+            }
+        }
+        setIf('company_tax_id', (emp && emp.tax_id) ? emp.tax_id : '—');
+        setIf('tax_authority', guessTaxAuthority(rec.company_name));
+        setIf('report_channel', '其他');
+        setIf('tax_period', rec.year + '-' + pad2(rec.month));
+        // 本期收入与扣除: 按国家标准计算
+        // 缴费基数 = 本人当月工资, 受当地上年度社平工资 60%~300% 上下限约束(国发〔2019〕13 号)
+        var inc = parseFloat(rec.income) || 0;
+        var base = socialBaseOf(inc);
+        var pension = round2(base * 0.08);        // 基本养老保险 8%
+        var medical = round2(base * 0.02);        // 基本医疗保险 2%
+        var unemployment = round2(base * 0.005);  // 失业保险 0.5%
+        var housing = round2(base * 0.05);        // 住房公积金 5%(国家规定下限)
+        setDerived('period_income', inc);
+        setDerived('period_tax_free', 0);
+        setDerived('period_deduction', 5000);
+        setDerived('period_special', round2(pension + medical + unemployment + housing));
+        setDerived('period_pension', pension);
+        setDerived('period_medical', medical);
+        setDerived('period_unemployment', unemployment);
+        setDerived('period_housing', housing);
+        setDerived('period_other', 0);
+        setDerived('period_donation', 0);
+        if (changed) saveDB(db);
+    }
+
+    // ============ 渲染 ============
+    var currentRec = null;
+    function fillFields(rec) {
+        FIELDS.forEach(function (def) {
+            var el = document.querySelector('[data-field="' + def.key + '"]');
+            if (!el) return;
+            var v = rec[def.key];
+            if (def.type === 'money') {
+                el.textContent = formatMoney(v) + '元';
+            } else {
+                el.textContent = (v === undefined || v === null || v === '') ? '—' : v;
+            }
+        });
+    }
+    function loadDetail() {
+        var db = getDB();
+        var rec = findRec(db, getRecId());
+        if (!rec) {
+            FIELDS.forEach(function (def) {
+                var el = document.querySelector('[data-field="' + def.key + '"]');
+                if (el) el.textContent = def.type === 'money' ? '0.00元' : '—';
+            });
+            return;
+        }
+        currentRec = rec;
+        initDefaults(rec, db);
+        var back = document.getElementById('backBtn');
+        if (back) back.setAttribute('href', 'chaxun.html?year=' + rec.year);
+        fillFields(rec);
+        bindDoubleClick();
+    }
+
+    // ============ 双击编辑 ============
+    var lastClickField = null;
+    var lastClickTime = 0;
+    var editingField = null;
+    function bindDoubleClick() {
+        document.querySelectorAll('[data-field]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                var f = el.getAttribute('data-field');
+                var now = Date.now();
+                if (lastClickField === f && (now - lastClickTime) < 400) {
+                    openEdit(f);
+                    lastClickField = null;
+                    lastClickTime = 0;
+                } else {
+                    lastClickField = f;
+                    lastClickTime = now;
+                }
+            });
+        });
+    }
+    function openEdit(field) {
+        if (!currentRec) return;
+        var def = fieldDef(field);
+        if (!def) return;
+        editingField = field;
+        document.getElementById('editLabel').textContent = def.label;
+        var input = document.getElementById('editInput');
+        var v = currentRec[field];
+        input.value = (v === undefined || v === null) ? '' : v;
+        document.getElementById('editMask').classList.add('show');
+        document.getElementById('editModal').classList.add('show');
+        setTimeout(function () { input.focus(); input.select(); }, 200);
+    }
+    function closeEdit() {
+        document.getElementById('editMask').classList.remove('show');
+        document.getElementById('editModal').classList.remove('show');
+        editingField = null;
+    }
+    function saveEdit() {
+        if (!editingField) return;
+        var def = fieldDef(editingField);
+        var raw = document.getElementById('editInput').value.trim();
+        var val = raw;
+        if (def.type === 'money') {
+            var n = parseFloat(raw);
+            if (isNaN(n) || n < 0) { showToast('请输入正确的金额'); return; }
+            val = Math.round(n * 100) / 100;
+        } else if (raw === '') {
+            showToast('内容不能为空');
+            return;
+        }
+        // 从数据层重新取这条记录: 保证"改的"和"存的"是同一份对象(否则修改会丢)
+        var db = getDB();
+        var rec = findRec(db, getRecId());
+        if (!rec) { showToast('记录不存在'); return; }
+        rec[editingField] = val;
+        // 改了扣缴义务人名称 → 同步重匹配纳税人识别号与主管税务机关
+        if (editingField === 'company_name') {
+            var emp = null, emps = db.employers || [];
+            for (var k = 0; k < emps.length; k++) { if (emps[k].name === rec.company_name) { emp = emps[k]; break; } }
+            rec.company_tax_id = (emp && emp.tax_id) ? emp.tax_id : '—';
+            rec.tax_authority = guessTaxAuthority(rec.company_name);
+        }
+        var recalc = false;
+        if (editingField === 'income') {
+            // 收入变了 → 同步重算"本期收入与扣除"各项(缴费基数 = 本人当月工资, 受 60%~300% 约束)
+            var base = socialBaseOf(rec.income);
+            rec.period_income = rec.income;
+            rec.period_pension = round2(base * 0.08);
+            rec.period_medical = round2(base * 0.02);
+            rec.period_unemployment = round2(base * 0.005);
+            rec.period_housing = round2(base * 0.05);
+            rec.period_special = round2(rec.period_pension + rec.period_medical + rec.period_unemployment + rec.period_housing);
+            recalc = true;
+        }
+        // 收入 / 所得类型变了 → 按累计预扣法重算该年税额
+        if ((editingField === 'income' || editingField === 'income_type') && typeof window.recalcYearTax === 'function') {
+            window.recalcYearTax(db, rec.year);
+            recalc = true;
+        }
+        saveDB(db);
+        currentRec = findRec(db, getRecId()) || rec;
+        fillFields(currentRec);
+        closeEdit();
+        showToast(recalc ? '已保存，税额已重算' : '已保存：' + def.label);
+    }
+    document.getElementById('editInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') saveEdit();
+    });
+
+    // 专项扣除展开/收起
+    var specialDeductionExpanded = false;
+    function toggleSpecialDeduction() {
+        specialDeductionExpanded = !specialDeductionExpanded;
+        var detail = document.getElementById('specialDeductionDetail');
+        var arrow = document.getElementById('specialDeductionArrow');
+        if (specialDeductionExpanded) {
+            detail.style.display = 'block';
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            detail.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+    // 跳转到税款计算页面
+    function goTaxCalculation() {
+        var id = getRecId();
+        if (id) {
+            window.location.href = 'shuikuanjisuan.html?id=' + id;
+        }
+    }
+    loadDetail();
+</script>
+<script src="js/watermark.js"></script>
+<script src="js/page-loading.js"></script>
+    <script src="js/sdtab.js"></script>
+<!-- 「收入纳税明细」链路页面不显示底栏：sdtab.js 的 buildNav() 首行为 if(!nav) return，
+     因此移除 <nav class="bottom-nav"> 挂载点即可只填充、不生成 -->
+</body>
+</html>
