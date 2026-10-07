@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/apple.js"></script>
+<script>
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        body {
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        * {
+            -webkit-touch-callout: none;
+        }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function (e) {
+        if (e.key === "F12") e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+            e.preventDefault();
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+            e.preventDefault();
+        }
+    });
+    DisableDevtool({
+        disableMenu: true,
+        clearLog: true,
+        ondevtoolopen() {
+            document.documentElement.innerHTML = `
+                <div style="
+                    width:100vw;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    font-size:22px;
+                    background:#000;
+                    color:#fff;">
+                    暂无权限访问
+                </div>
+            `;
+            setTimeout(() => {
+                location.href = "about:blank";
+            }, 800);
+        }
+    });
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>专项附加扣除</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f6fa;
+            min-height: 100vh;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+        .header {
+            background: #fff;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .back-btn {
+            position: absolute;
+            left: 12px;
+            color: #1e6fff;
+            font-size: 15px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .header-title { font-size: 17px; font-weight: 600; color: #333; }
+        .grid-wrap {
+            background: #fff;
+            padding: 20px 12px 22px;
+        }
+        .zxk-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px 8px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .zxk-item {
+            border: none;
+            background: transparent;
+            padding: 6px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
+        }
+        .zxk-item:active { opacity: 0.85; }
+        .zxk-item .icon-wrap {
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zxk-item .label {
+            font-size: 13px;
+            color: #333;
+            text-align: center;
+            line-height: 1.35;
+        }
+        .zxk-item:nth-child(7) { grid-column: 1; }
+        .records {
+            margin-top: 8px;
+            background: #fff;
+            border-top: 8px solid #f5f6fa;
+            padding: 16px 0 8px;
+        }
+        .records-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px 14px;
+            gap: 10px;
+        }
+        .records-title { font-size: 16px; font-weight: 600; color: #333; flex-shrink: 0; }
+        .year-select-wrap {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            color: #666;
+        }
+        .year-select-wrap select {
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: #666;
+            font-family: inherit;
+            padding: 4px 2px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+        .record-list { list-style: none; }
+        .record-item {
+            display: block;
+            width: 100%;
+            border: none;
+            background: #fff;
+            text-align: left;
+            padding: 14px 40px 14px 16px;
+            position: relative;
+            border-bottom: 1px solid #f0f0f0;
+            font-family: inherit;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .record-item:active { background: #fafafa; }
+        .record-item-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.35;
+        }
+        .record-item-line {
+            font-size: 13px;
+            color: #999;
+            line-height: 1.55;
+        }
+        .record-item-arrow {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ccc;
+            font-size: 18px;
+            line-height: 1;
+        }
+        .records-empty {
+            padding: 32px 16px 48px;
+            text-align: center;
+            font-size: 15px;
+            color: #999;
+        }
+        .records-footer {
+            text-align: center;
+            padding: 20px 16px 12px;
+        }
+        .records-footer a,
+        .records-footer button {
+            border: none;
+            background: none;
+            color: #1e6fff;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .modal-root {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-root.is-open { display: flex; }
+        .modal-mask {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+        }
+        .modal-panel {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 16px 16px;
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+        .modal-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .form-field { margin-bottom: 14px; }
+        .form-field label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .form-field input,
+        .form-field select {
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 15px;
+            font-family: inherit;
+            color: #333;
+            background: #fff;
+        }
+        .form-field input:disabled,
+        .form-field select:disabled {
+            background: #f5f5f5;
+            color: #888;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .modal-btn {
+            flex: 1;
+            height: 42px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .modal-btn.cancel { background: #f0f0f0; color: #333; }
+        .modal-btn.primary { background: #1e6fff; color: #fff; }
+        .modal-btn.danger {
+            width: 100%;
+            margin-top: 10px;
+            background: #fff;
+            color: #e53935;
+            border: 1px solid #ffcdd2;
+        }
+        .voided-banner {
+            display: none;
+            padding: 8px 16px;
+            background: #fff8e1;
+            color: #8d6e00;
+            font-size: 13px;
+            text-align: center;
+        }
+        .voided-banner.is-show { display: block; }
+    </style>
+<script src="js/local_api.js"></script>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- SD_PAGE_SKIN_START -->
+<style id="sd-page-skin">
+/* ============================================================
+   SD 页面皮肤层 —— 通用基线（SPEC.md §3/§4/§5 对齐）
+   注入位置：各页 <head> 内 css/sdtheme.css 之后
+   原则：只覆盖视觉属性；绝不覆盖 display（弹层由 JS 切 display）
+   ============================================================ */
+
+/* ---------------- SPEC §3 二级页 header ---------------- */
+/* 注意：不覆盖 position/top/left/right/z-index —— chaxun/xiangqing 的 header 是
+   position:fixed 且 chaxun 的 JS(alignList) 依赖其实测高度；只改视觉属性。 */
+html body .header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    box-shadow: none !important;
+    padding: 12px 16px !important;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+html body .header .back-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    max-width: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    color: #1677FF !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .header .back-icon,
+html body .header .back-btn img {
+    width: 10px !important;
+    height: 10px !important;
+    object-fit: contain !important;
+    filter: none !important;
+    display: block !important;
+}
+/* 图片箭头统一替换为 CSS 矢量箭头（10×10 的 jt.png 放大到 18px 会糊；颜色统一 #1677FF） */
+html body .header .back-btn:has(img) img { display: none !important; }
+html body .header .back-btn:has(img)::before {
+    content: '' !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 4px !important;
+    border-left: 1.6px solid #1677FF !important;
+    border-bottom: 1.6px solid #1677FF !important;
+    transform: rotate(45deg) !important;
+}
+/* 只有箭头、没有「返回」文字的页（jingyingsuode / shenbao_jilu）补出 SPEC .backText 文案 */
+html body .header .back-btn:has(img):not(:has(span))::after {
+    content: '返回' !important;
+    font-size: 16px !important;
+    color: #1677FF !important;
+    margin-left: 2px !important;
+}
+html body .header .header-title,
+html body .header h1,
+html body .header h1.header-title,
+html body .header button.header-title {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    color: #1A1A1A !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-family: inherit !important;
+}
+html body .header .header-right,
+html body .header .header-link,
+html body .header .header-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    text-align: right !important;
+    color: #1677FF !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* ---------------- 底栏避让（SPEC TabBarChrome: height 86） ---------------- */
+html body {
+    padding-bottom: var(--sd-nav-clearance, 86px) !important;
+    background: #F5F6FA !important;
+}
+
+/* ---------------- SPEC §5 弹层：层级必须高于胶囊导航(z-index 9000) ---------------- */
+html body .mask,
+html body .edit-mask,
+html body .picker-overlay,
+html body .modal-mask,
+html body .year-overlay,
+html body .modal-root {
+    z-index: 9500 !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+html body .modal,
+html body .edit-modal,
+html body .modal-panel,
+html body .year-sheet,
+html body .year-picker {
+    z-index: 9501 !important;
+    background: #fff !important;
+}
+html body .toast,
+html body #toast {
+    z-index: 9600 !important;
+}
+/* 居中深色圆角提示（SPEC：居中弹窗体系） */
+html body .toast {
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    max-width: 76% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+}
+html body .toast.show,
+html body .toast.visible,
+html body .toast.active {
+    transform: translate(-50%, -50%) !important;
+}
+
+/* ---------------- SPEC §4 卡片基线 ---------------- */
+html body .card,
+html body .info-card,
+html body .detail-card,
+html body .panel,
+html body .gen-card,
+html body .grid-wrap,
+html body .type-list,
+html body .year-select,
+html body .year-select-wrap,
+html body .list-item,
+html body .record-item {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ---------------- SPEC §4 按钮 ---------------- */
+html body .btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+html body .btn-primary,
+html body .submit-btn,
+html body .save-btn,
+html body .confirm-btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+}
+html body .btn-secondary,
+html body .btn-outline {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid #1677FF !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #1677FF !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+
+/* ---------------- SPEC §4 文本色阶 ---------------- */
+html body .link-btn,
+html body .info-link { color: #1677FF !important; text-decoration: none !important; }
+html body .del-btn { color: #FF4D4F !important; text-decoration: none !important; }
+
+/* ---------------- header 左右对称（SPEC §3：左右各 70px） ---------------- */
+/* 没有右侧操作位的页补一个平衡块，让标题真正居中；有 .header-right/.header-link 的页不生成 */
+html body .header:not(:has(.header-right)):not(:has(.header-link)):not(:has(.header-btn))::after {
+    content: '' !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+}
+
+/* ---------------- 防横向溢出兜底 ----------------
+   改前多页存在 input/select 固有宽度把 body 撑宽的问题（实测 nashui_edit scrollWidth=822 vs 390），
+   这里只约束盒宽与裁掉溢出，不改任何布局语义/功能。 */
+html body input,
+html body select,
+html body textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+html body img,
+html body svg {
+    max-width: 100% !important;
+}
+html body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* zxkouchu.html —— 专项附加扣除（图标网格 + 记录列表 + 弹层） */
+html body .header::after { content: '' !important; flex: 0 0 70px !important; }
+
+/* 6/7 项图标网格 */
+html body .grid-wrap {
+    background: #fff !important;
+    border-radius: 12px !important;
+    margin: 12px 16px 0 !important;
+    padding: 20px 12px 18px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+html body .zxk-grid { gap: 18px 8px !important; }
+html body .zxk-item {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    gap: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .zxk-item .icon-wrap {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #E6F4FF !important;
+    box-shadow: none !important;
+}
+html body .zxk-item .icon-wrap svg,
+html body .zxk-item .icon-wrap img {
+    width: 48px !important;
+    height: 48px !important;
+    display: block !important;
+    border-radius: 14px !important;
+}
+html body .zxk-item .label {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    color: #1A1A1A !important;
+    font-weight: 400 !important;
+    text-align: center !important;
+}
+
+/* 记录区 */
+html body .records { background: transparent !important; border-radius: 0 !important; box-shadow: none !important; margin: 16px 16px 0 !important; }
+html body .records-head { display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 0 0 8px !important; }
+html body .records-title { font-size: 16px !important; font-weight: 600 !important; color: #1A1A1A !important; }
+html body .year-select-wrap select {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    border-radius: 0 !important;
+    font-size: 15px !important;
+    color: #1A1A1A !important;
+    font-family: inherit !important;
+    outline: none !important;
+}
+html body #recordList {
+    background: #fff !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+html body .record-item {
+    background: #fff !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #F5F5F5 !important;
+    padding: 16px 20px !important;
+}
+html body .record-item:last-child { border-bottom: none !important; }
+html body .record-item-title { font-size: 18px !important; font-weight: 600 !important; color: #1A1A1A !important; }
+html body .record-item-line { font-size: 15px !important; color: #666 !important; line-height: 22px !important; }
+html body .record-item-arrow {
+    color: #C4C9D4 !important;
+    font-size: 0 !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-top: 1.6px solid #C4C9D4 !important;
+    border-right: 1.6px solid #C4C9D4 !important;
+    transform: rotate(45deg) !important;
+}
+/* SPEC §4 .empty-card：白卡居中 + padding 32 */
+html body .records-empty {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    font-size: 15px !important;
+    color: #999 !important;
+    padding: 32px 16px !important;
+    margin: 0 !important;
+    text-align: center !important;
+}
+html body .records-footer a,
+html body .records-footer button { color: #1677FF !important; font-size: 14px !important; background: transparent !important; border: none !important; }
+html body .voided-banner {
+    background: #FFF7E6 !important;
+    border: 1px solid #FFE7BA !important;
+    border-radius: 10px !important;
+    color: #B87333 !important;
+    font-size: 13px !important;
+    line-height: 20px !important;
+    padding: 12px !important;
+    margin: 0 16px !important;
+}
+
+/* 记录弹层（本页 modal-root z-index 已 9999） */
+html body .modal-panel {
+    background: #fff !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+}
+html body .modal-title { font-size: 16px !important; font-weight: 600 !important; color: #1A1A1A !important; }
+html body .form-field label { font-size: 14px !important; color: #666 !important; }
+html body .modal-panel input,
+html body .modal-panel select {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    border-bottom: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    font-size: 14px !important;
+    color: #1A1A1A !important;
+    font-family: inherit !important;
+    outline: none !important;
+}
+html body .modal-actions .modal-btn { border-radius: 8px !important; font-size: 15px !important; padding: 10px 16px !important; }
+html body .modal-actions .modal-btn.primary,
+html body .modal-actions .modal-btn.danger,
+html body .modal-actions .modal-btn.cancel { font-family: inherit !important; }
+html body .modal-actions .modal-btn.primary { background: #1677FF !important; color: #fff !important; border: none !important; }
+html body .modal-actions .modal-btn.cancel { background: #F5F5F5 !important; color: #666 !important; border: none !important; }
+html body .modal-actions .modal-btn.danger { background: #fff !important; color: #FF4D4F !important; border: 1px solid #FFD8D8 !important; }
+
+</style>
+<!-- SD_PAGE_SKIN_END -->
+</head>
+<body class="page-zxkouchu">
+    <div class="header">
+        <a href="bancha.html" class="back-btn">
+            <img src="jt.png" alt="" style="width: 9px; vertical-align: middle;">
+            <span>返回</span>
+        </a>
+        <span class="header-title">专项附加扣除</span>
+    </div>
+
+    <div class="grid-wrap">
+        <div class="zxk-grid" id="zxkCategoryGrid">
+            <button type="button" class="zxk-item" data-category="子女教育">
+                <span class="icon-wrap">
+                    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <rect x="8" y="14" width="14" height="28" rx="2" fill="#4a9eff"/>
+                        <rect x="19" y="10" width="14" height="32" rx="2" fill="#5eb8ff"/>
+                        <rect x="30" y="16" width="14" height="26" rx="2" fill="#7ec8ff"/>
+                    </svg>
+                </span>
+                <span class="label">子女教育</span>
+            </button>
+            <button type="button" class="zxk-item" data-category="继续教育">
+                <span class="icon-wrap">
+                    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <path d="M26 8L8 16v8c0 8 7.5 14 18 18 10.5-4 18-10 18-18v-8L26 8z" fill="#7ec8ff"/>
+                        <ellipse cx="26" cy="16" rx="18" ry="6" fill="#5eb8ff"/>
+                    </svg>
+                </span>
+                <span class="label">继续教育</span>
+            </button>
+            <button type="button" class="zxk-item" data-category="大病医疗">
+                <span class="icon-wrap">
+                    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <rect x="12" y="14" width="28" height="24" rx="3" fill="#f0f4f8" stroke="#cfd8e6"/>
+                        <rect x="22" y="20" width="8" height="8" rx="1" fill="#e53935"/>
+                    </svg>
+                </span>
+                <span class="label">大病医疗</span>
+            </button>
+            <button type="button" class="zxk-item" data-category="住房贷款利息">
+                <span class="icon-wrap">
+                    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <path d="M26 12L10 24v14h32V24L26 12z" fill="#9b7aff"/>
+                        <text x="26" y="34" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">¥</text>
+                    </svg>
+                </span>
+                <span class="label">住房贷款利息</span>
+            </button>
+            <button type="button" class="zxk-item" data-category="住房租金">
+                <span class="icon-wrap">
+                    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <path d="M26 12L10 24v14h32V24L26 12z" fill="#b39dff"/>
+                        <circle cx="26" cy="28" r="4" fill="none" stroke="#fff" stroke-width="2"/>
+                        <path d="M26 32v6" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                </span>
+                <span class="label">住房租金</span>
+            </button>
+            <button type="button" class="zxk-item" data-category="赡养老人">
+                <span class="icon-wrap">
+                    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <circle cx="26" cy="18" r="8" fill="#ffb74d"/>
+                        <path d="M14 44c0-8 5.4-14 12-14s12 6 12 14H14z" fill="#ff9800"/>
+                    </svg>
+                </span>
+                <span class="label">赡养老人</span>
+            </button>
+            <button type="button" class="zxk-item" data-category="3岁以下婴幼儿照护">
+                <span class="icon-wrap">
+                    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                        <circle cx="22" cy="16" r="6" fill="#f48fb1"/>
+                        <circle cx="32" cy="20" r="5" fill="#fce4ec" stroke="#f48fb1"/>
+                        <path d="M12 40c2-8 8-12 16-12s14 4 16 12H12z" fill="#ec407a" opacity="0.85"/>
+                    </svg>
+                </span>
+                <span class="label">3岁以下婴幼儿照护</span>
+            </button>
+        </div>
+    </div>
+
+    <section class="records">
+        <div class="voided-banner" id="voidedBanner">当前查看已作废的扣除信息</div>
+        <div class="records-head">
+            <span class="records-title">填报记录</span>
+            <div class="year-select-wrap">
+                <span>选择查询年度：</span>
+                <select id="yearSelect" aria-label="选择查询年度"></select>
+            </div>
+        </div>
+        <ul class="record-list" id="recordList"></ul>
+        <div class="records-empty" id="recordsEmpty" style="display:none;">暂无扣除信息</div>
+        <div class="records-footer">
+            <button type="button" id="btnToggleVoided">查看已作废的扣除信息 &gt;</button>
+        </div>
+    </section>
+
+    <div id="recordModal" class="modal-root" role="dialog" aria-modal="true">
+        <div class="modal-mask" id="recordModalMask"></div>
+        <div class="modal-panel">
+            <p class="modal-title" id="recordModalTitle">添加扣除信息</p>
+            <div class="form-field">
+                <label for="fCategory">扣除类型</label>
+                <select id="fCategory"></select>
+            </div>
+            <div class="form-field" id="relatedNameWrap">
+                <label for="fRelatedName">关联人员姓名（选填）</label>
+                <input type="text" id="fRelatedName" placeholder="如赡养老人填写被赡养人姓名" maxlength="32">
+            </div>
+            <div class="form-field">
+                <label for="fLastModified">最后修改时间</label>
+                <input type="date" id="fLastModified">
+            </div>
+            <div class="form-field">
+                <label for="fFilingSource">填报来源</label>
+                <select id="fFilingSource">
+                    <option value="本人">本人</option>
+                    <option value="扣缴义务人">扣缴义务人</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="fDeductionYear">扣除年度</label>
+                <select id="fDeductionYear"></select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn cancel" id="btnModalCancel">取消</button>
+                <button type="button" class="modal-btn primary" id="btnModalSave">保存</button>
+            </div>
+            <button type="button" class="modal-btn danger" id="btnModalDelete" style="display:none;">删除</button>
+            <button type="button" class="modal-btn danger" id="btnModalVoid" style="display:none;">作废此条扣除</button>
+        </div>
+    </div>
+
+    <script src="js/watermark.js?v=20260511-mine-wm"></script>
+    <script>
+        (function () {
+            var CATEGORIES = [
+                '子女教育',
+                '继续教育',
+                '大病医疗',
+                '住房贷款利息',
+                '住房租金',
+                '赡养老人',
+                '3岁以下婴幼儿照护'
+            ];
+            var NEED_RELATED = {
+                '赡养老人': true,
+                '子女教育': true,
+                '3岁以下婴幼儿照护': true,
+                '大病医疗': true
+            };
+
+            var queryYear = new Date().getFullYear();
+            var viewingVoided = false;
+            var editingId = null;
+            var recordsCache = [];
+
+            var yearSelect = document.getElementById('yearSelect');
+            var recordList = document.getElementById('recordList');
+            var recordsEmpty = document.getElementById('recordsEmpty');
+            var voidedBanner = document.getElementById('voidedBanner');
+            var btnToggleVoided = document.getElementById('btnToggleVoided');
+            var modal = document.getElementById('recordModal');
+            var fCategory = document.getElementById('fCategory');
+            var fDeductionYear = document.getElementById('fDeductionYear');
+
+            function esc(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function todayStr() {
+                var d = new Date();
+                return (
+                    d.getFullYear() +
+                    '-' +
+                    String(d.getMonth() + 1).padStart(2, '0') +
+                    '-' +
+                    String(d.getDate()).padStart(2, '0')
+                );
+            }
+
+            function fillYearOptions() {
+                var y = new Date().getFullYear();
+                var html = '';
+                for (var i = y + 1; i >= y - 5; i--) {
+                    html += '<option value="' + i + '">' + i + '</option>';
+                }
+                yearSelect.innerHTML = html;
+                yearSelect.value = String(queryYear);
+                fDeductionYear.innerHTML = html;
+            }
+
+            function fillCategoryOptions() {
+                var html = '';
+                CATEGORIES.forEach(function (c) {
+                    html += '<option value="' + esc(c) + '">' + esc(c) + '</option>';
+                });
+                fCategory.innerHTML = html;
+            }
+
+            function authJson(url, opts) {
+                var fetchFn = typeof authFetch === 'function' ? authFetch : fetch;
+                return fetchFn(url, opts || {}).then(function (r) {
+                    return r.json();
+                });
+            }
+
+            function loadRecords() {
+                var q =
+                    'api/user.php?action=special_deduction_records&year=' +
+                    encodeURIComponent(queryYear);
+                if (viewingVoided) {
+                    q += '&voided=1';
+                }
+                return authJson(q, { credentials: 'same-origin' }).then(function (body) {
+                    if (body && body.code === 200 && body.data && body.data.records) {
+                        recordsCache = body.data.records;
+                    } else {
+                        recordsCache = [];
+                    }
+                    renderRecords();
+                });
+            }
+
+            function renderRecords() {
+                voidedBanner.classList.toggle('is-show', viewingVoided);
+                btnToggleVoided.textContent = viewingVoided
+                    ? '返回有效扣除信息'
+                    : '查看已作废的扣除信息 >';
+
+                if (!recordsCache.length) {
+                    recordList.innerHTML = '';
+                    recordsEmpty.style.display = 'block';
+                    return;
+                }
+                recordsEmpty.style.display = 'none';
+                var html = '';
+                recordsCache.forEach(function (r) {
+                    html +=
+                        '<li><button type="button" class="record-item" data-id="' +
+                        esc(r.id) +
+                        '">' +
+                        '<div class="record-item-title">' +
+                        esc(r.title || r.category) +
+                        '</div>' +
+                        '<div class="record-item-line">最后修改时间：' +
+                        esc(r.last_modified_date || '—') +
+                        '</div>' +
+                        '<div class="record-item-line">填报来源：' +
+                        esc(r.filing_source || '本人') +
+                        '</div>' +
+                        '<div class="record-item-line">扣除年度：' +
+                        esc(r.deduction_year) +
+                        '年</div>' +
+                        '<span class="record-item-arrow" aria-hidden="true">›</span>' +
+                        '</button></li>';
+                });
+                recordList.innerHTML = html;
+            }
+
+            function syncRelatedVisibility() {
+                var cat = fCategory.value;
+                var need = !!NEED_RELATED[cat];
+                document.getElementById('relatedNameWrap').style.display = need ? 'block' : 'block';
+                document.getElementById('fRelatedName').placeholder = need
+                    ? '如「' + cat + '」请填写关联人员姓名'
+                    : '选填，部分类型用于标题展示';
+            }
+
+            function openModal(mode, record, presetCategory) {
+                editingId = record && record.id ? record.id : null;
+                document.getElementById('recordModalTitle').textContent =
+                    mode === 'edit' ? '编辑扣除信息' : '添加扣除信息';
+                document.getElementById('btnModalDelete').style.display =
+                    mode === 'edit' && !viewingVoided ? 'block' : 'none';
+                document.getElementById('btnModalVoid').style.display =
+                    mode === 'edit' && !viewingVoided ? 'block' : 'none';
+
+                fCategory.disabled = mode === 'edit';
+                if (record) {
+                    fCategory.value = record.category;
+                    document.getElementById('fRelatedName').value = record.related_name || '';
+                    document.getElementById('fLastModified').value =
+                        record.last_modified_date || todayStr();
+                    document.getElementById('fFilingSource').value = record.filing_source || '本人';
+                    fDeductionYear.value = String(record.deduction_year || queryYear);
+                } else {
+                    fCategory.disabled = false;
+                    fCategory.value = presetCategory || CATEGORIES[0];
+                    document.getElementById('fRelatedName').value = '';
+                    document.getElementById('fLastModified').value = todayStr();
+                    document.getElementById('fFilingSource').value = '本人';
+                    fDeductionYear.value = String(queryYear);
+                }
+                syncRelatedVisibility();
+                modal.classList.add('is-open');
+            }
+
+            function closeModal() {
+                modal.classList.remove('is-open');
+                editingId = null;
+            }
+
+            function saveRecord() {
+                var payload = {
+                    category: fCategory.value,
+                    related_name: document.getElementById('fRelatedName').value.trim(),
+                    last_modified_date: document.getElementById('fLastModified').value,
+                    filing_source: document.getElementById('fFilingSource').value,
+                    deduction_year: parseInt(fDeductionYear.value, 10)
+                };
+                if (!payload.last_modified_date) {
+                    alert('请填写最后修改时间');
+                    return;
+                }
+                var action = editingId ? 'update_special_deduction_record' : 'add_special_deduction_record';
+                if (editingId) {
+                    payload.record_id = editingId;
+                }
+                document.getElementById('btnModalSave').disabled = true;
+                authJson('api/user.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers:
+                        typeof authHeaders === 'function'
+                            ? authHeaders()
+                            : { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.assign({ action: action }, payload))
+                })
+                    .then(function (body) {
+                        if (body && body.code === 200) {
+                            closeModal();
+                            var y = payload.deduction_year;
+                            if (y && y !== queryYear && !viewingVoided) {
+                                queryYear = y;
+                                yearSelect.value = String(queryYear);
+                            }
+                            return loadRecords();
+                        }
+                        alert((body && body.msg) || '保存失败');
+                    })
+                    .catch(function () {
+                        alert('网络错误');
+                    })
+                    .finally(function () {
+                        document.getElementById('btnModalSave').disabled = false;
+                    });
+            }
+
+            function deleteRecord() {
+                if (!editingId || !confirm('确定删除该条扣除信息？')) {
+                    return;
+                }
+                authJson('api/user.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers:
+                        typeof authHeaders === 'function'
+                            ? authHeaders()
+                            : { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete_special_deduction_record',
+                        record_id: editingId
+                    })
+                })
+                    .then(function (body) {
+                        if (body && body.code === 200) {
+                            closeModal();
+                            loadRecords();
+                        } else {
+                            alert((body && body.msg) || '删除失败');
+                        }
+                    })
+                    .catch(function () {
+                        alert('网络错误');
+                    });
+            }
+
+            function voidRecord() {
+                if (!editingId || !confirm('确定作废该条扣除信息？作废后可在底部链接中查看。')) {
+                    return;
+                }
+                var rec = recordsCache.filter(function (r) {
+                    return r.id === editingId;
+                })[0];
+                if (!rec) {
+                    return;
+                }
+                authJson('api/user.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers:
+                        typeof authHeaders === 'function'
+                            ? authHeaders()
+                            : { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update_special_deduction_record',
+                        record_id: editingId,
+                        category: rec.category,
+                        related_name: rec.related_name,
+                        last_modified_date: rec.last_modified_date,
+                        filing_source: rec.filing_source,
+                        deduction_year: rec.deduction_year,
+                        is_voided: 1
+                    })
+                })
+                    .then(function (body) {
+                        if (body && body.code === 200) {
+                            closeModal();
+                            loadRecords();
+                        } else {
+                            alert((body && body.msg) || '作废失败');
+                        }
+                    })
+                    .catch(function () {
+                        alert('网络错误');
+                    });
+            }
+
+            document.getElementById('zxkCategoryGrid').addEventListener('click', function (e) {
+                var btn = e.target.closest('.zxk-item');
+                if (!btn || viewingVoided) {
+                    return;
+                }
+                openModal('add', null, btn.getAttribute('data-category'));
+            });
+
+            recordList.addEventListener('click', function (e) {
+                var btn = e.target.closest('.record-item');
+                if (!btn) {
+                    return;
+                }
+                var id = btn.getAttribute('data-id');
+                var rec = recordsCache.filter(function (r) {
+                    return String(r.id) === id;
+                })[0];
+                if (rec) {
+                    openModal('edit', rec);
+                }
+            });
+
+            yearSelect.addEventListener('change', function () {
+                queryYear = parseInt(yearSelect.value, 10) || new Date().getFullYear();
+                loadRecords();
+            });
+
+            btnToggleVoided.addEventListener('click', function () {
+                viewingVoided = !viewingVoided;
+                loadRecords();
+            });
+
+            fCategory.addEventListener('change', syncRelatedVisibility);
+
+            document.getElementById('btnModalCancel').addEventListener('click', closeModal);
+            document.getElementById('recordModalMask').addEventListener('click', closeModal);
+            document.getElementById('btnModalSave').addEventListener('click', saveRecord);
+            document.getElementById('btnModalDelete').addEventListener('click', deleteRecord);
+            document.getElementById('btnModalVoid').addEventListener('click', voidRecord);
+
+            fillYearOptions();
+            fillCategoryOptions();
+            queryYear = parseInt(yearSelect.value, 10);
+            loadRecords().catch(function () {
+                recordsEmpty.style.display = 'block';
+                recordsEmpty.textContent = '加载失败，请稍后重试';
+            });
+        })();
+    </script>
+    <script src="js/watermark.js"></script>
+<script src="js/page-loading.js"></script>
+    <script src="js/sdtab.js"></script>
+<nav class="bottom-nav"></nav>
+</body>
+</html>
