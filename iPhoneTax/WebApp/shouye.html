@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/local_api.js"></script>
+<script src="js/apple.js"></script>
+<script>
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        body {
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        * {
+            -webkit-touch-callout: none;
+        }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function (e) {
+        if (e.key === "F12") e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+            e.preventDefault();
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+            e.preventDefault();
+        }
+    });
+    DisableDevtool({
+        disableMenu: true,
+        clearLog: true,
+        ondevtoolopen() {
+            document.documentElement.innerHTML = `
+                <div style="
+                    width:100vw;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    font-size:22px;
+                    background:#000;
+                    color:#fff;">
+                    暂无权限访问
+                </div>
+            `;
+            setTimeout(() => {
+                location.href = "about:blank";
+            }, 800);
+        }
+    });
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>首页</title>
+    <link rel="stylesheet" href="css/sdtheme.css">
+    <link rel="stylesheet" href="css/nav.css">
+    <style id="sd-base">
+        /* ===== 基础：整屏图模式（对齐新版 RN App） ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+            background: #F2F3F7;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+        }
+    </style>
+    <style id="sd-spec-align">
+body {
+  background: #F5F6FA !important;
+  padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+}
+/* 底部胶囊导航由 css/sdtheme.css + js/sdtab.js 统一提供，此处不重复定义 */
+
+/* --- 首页：SPEC 3 节「渐变头页面」保留渐变（不改白底），SPEC 1.1 gradientBlue --- */
+body .sd-home-hero {
+  background: linear-gradient(135deg, #2B7BF5 0%, #1B5FD9 100%) !important;
+  /* 顶部预留固定搜索条高度（sdtheme .sd-searchbar = 8+38+8 = 54px）+ 8px 间距，避免遮挡公告条 */
+  padding: calc(62px + env(safe-area-inset-top, 0px)) 16px 64px !important;
+  border-radius: 0 0 22px 22px !important;
+  color: #fff !important;
+}
+/* 固定搜索条保持汉堡设计的透明底（滚动后由 sdtheme .scrolled 转白），仅对齐左右内边距 */
+body .sd-searchbar {
+  padding: 8px 16px !important;
+}
+body .sd-searchbar .sd-search-input {
+  font-size: 14px !important; color: #999999 !important;
+}
+body .sd-notice {
+  background: #FFF7E6 !important; border: 1px solid #FFD591 !important;
+  border-radius: 10px !important; padding: 12px !important;
+  color: #D46B08 !important; font-size: 13px !important; line-height: 20px !important;
+}
+body .sd-notice svg { color: #D46B08 !important; }
+body .sd-notice .notice-text { font-size: 13px !important; color: #D46B08 !important; }
+body .sd-notice .notice-icon { background: #FFF3E4 !important; color: #FF9A2E !important; }
+/* --- SPEC 4 节 .scrollContent{padding:16px} --- */
+body .sd-home-body { padding: 0 16px !important; margin-top: -44px !important; }
+/* --- SPEC 4 节 .card --- */
+body .sd-banner, body .sd-grid, body .sd-service-banner {
+  margin: 0 0 12px 0 !important;
+  padding: 16px !important;
+  background: #fff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .04) !important;
+}
+body .sd-banner { padding: 16px 16px 20px !important; }
+body .sd-banner h2 { font-size: 18px !important; font-weight: 600 !important; color: #1A1A1A !important; }
+body .sd-banner p { font-size: 15px !important; line-height: 22px !important; color: #666666 !important; }
+/* --- SPEC 4 节 .btn-primary：色/圆角/字号/上下 14px 对齐；宽度受右下 118px 装饰插画限制，不取 100% --- */
+body .sd-banner .sd-btn {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  width: auto !important; max-width: calc(100% - 122px) !important; height: auto !important;
+  margin-top: 4px !important; padding: 14px 24px !important;
+  background: #1677FF !important; color: #fff !important;
+  border: none !important; border-radius: 8px !important;
+  font-size: 17px !important; font-weight: 500 !important;
+  box-shadow: 0 4px 10px rgba(22, 119, 255, .22) !important;
+}
+/* --- 专项附加扣除强调卡：SPEC 1.1 gradientBlue --- */
+body .sd-service-banner {
+  background: linear-gradient(135deg, #2B7BF5 0%, #1B5FD9 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px rgba(43, 76, 190, .18) !important;
+}
+body .sd-service-banner .sd-sb-head { font-size: 16px !important; font-weight: 600 !important; }
+body .sd-service-banner .sd-sb-tip { font-size: 15px !important; }
+body .sd-service-banner .sd-sb-left { color: #1677FF !important; font-size: 13px !important; }
+/* --- SPEC 4 节 .section-title（16px/600 + 左侧 3px 竖条 #1677FF） --- */
+body .sd-section-title {
+  margin: 20px 0 12px !important; padding-left: 10px !important; position: relative !important;
+  font-size: 16px !important; font-weight: 600 !important; color: #1A1A1A !important;
+}
+body .sd-section-title::before {
+  content: '' !important; position: absolute !important; left: 0 !important; top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 3px !important; height: 16px !important;
+  background: #1677FF !important; border-radius: 2px !important;
+}
+body .sd-grid { padding: 16px 8px !important; }
+body .sd-cell-txt { font-size: 12px !important; color: #666666 !important; }
+/* --- SPEC 4 节 .btn-secondary 变体（服务卡内小按钮） --- */
+body .sd-sb-join {
+  height: auto !important; padding: 9px 20px !important;
+  background: #fff !important; color: #1677FF !important;
+  border: 1px solid #1677FF !important; border-radius: 8px !important;
+  font-size: 15px !important; font-weight: 500 !important;
+}
+body .sd-sb-pill { border-radius: 999px !important; }
+</style>
+    <style id="sd-page-skin">
+        /* ===== 整屏图 + 透明热区（数值搬运自 HomeScreen.tsx / useHomeImageStore.ts） ===== */
+        :root {
+            /* 1080 设计稿 1px 对应的 CSS 长度（源码 const scale = width / 1080） */
+            --sd-unit: calc(100vw / 1080);
+        }
+
+        /* 根容器：HomeScreen.tsx:254-259 styles.bgWrap（aspectRatio 由行内 style 给） */
+        .sd-fullpage {
+            width: 100%;
+            position: relative;
+            line-height: 0;
+            z-index: 1;
+            background: #F2F3F7;
+        }
+        /* HomeScreen.tsx:260-263 styles.bgImage */
+        .sd-fullpage > .sd-bgimg {
+            width: 100%;
+            display: block;
+        }
+
+        /* 透明热区：HomeScreen.tsx:265-359 styles.*Hot */
+        .sd-hot {
+            position: absolute;
+            display: block;
+            background: transparent;
+            border: 0;
+            margin: 0;
+            padding: 0;
+            text-decoration: none;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+            z-index: 3;
+        }
+    
+    /* ===== 公告条（会滚动）：盖在整屏图里那条静态公告上，样式沿用现在的橙条 ===== */
+    #uiRoot { position: relative; }
+    .sd-home-notice {
+        position: absolute;
+        top: 14.4444vw;          /* 156/1080 */
+        left: 3.3333vw;          /* 36/1080  */
+        width: 93.3333vw;        /* (1044-36)/1080 */
+        height: 11.1111vw;       /* 120/1080 */
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        background: #FFF5E6;                 /* 与图上静态像素 (255,245,230) 完全同色，可无缝覆盖 */
+        border-radius: 1.8519vw;             /* 20/1080 */
+        padding: 0 1.8519vw;
+        overflow: hidden;
+        z-index: 6;                          /* 高于热区(z:3) */
+        -webkit-tap-highlight-color: transparent;
+    }
+    .sd-home-notice .sdn-icon {
+        flex: 0 0 auto;
+        width: 3.1481vw;                     /* 34/1080 */
+        height: 3.1481vw;
+        margin-right: 1.4815vw;              /* 16/1080 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .sd-home-notice .sdn-icon svg { width: 100%; height: 100%; display: block; }
+    .sd-home-notice .sdn-slider {
+        flex: 1 1 auto;
+        min-width: 0;
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+    }
+    .sd-home-notice .sdn-row {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        transition: transform 0.4s ease;
+        will-change: transform;
+    }
+    .sd-home-notice .sdn-row.current { transform: translateY(0); }
+    .sd-home-notice .sdn-row.next-below { transform: translateY(100%); }
+    .sd-home-notice .sdn-row.exit-up { transform: translateY(-100%); }
+    .sd-home-notice .sdn-text {
+        display: inline-block;
+        white-space: nowrap;
+        font-size: 2.7778vw;                 /* 30/1080 */
+        line-height: 1.2;
+        color: #D46B08;
+        font-weight: 400;
+    }
+</style>
+</head>
+<body class="page-shouye">
+
+<!-- ===== UIKit 渲染根：整屏图 + 透明热区，全部由 js/ui_kit.js 按 geshui_ui_config 生成 ===== -->
+<div id="uiRoot"></div>
+
+<!-- ===== 首页公告条（会滚动）：位置精确覆盖整屏图里那条静态公告 =====
+     结构沿用源码 shouye.html:263-273，样式用本页现有的橙条（不照抄源码 UI） -->
+<div class="sd-home-notice" id="sdHomeNotice" aria-label="公告">
+    <span class="sdn-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3.2a4.9 4.9 0 0 0-4.9 4.9v3.1L5.5 13.9c-.35.65.12 1.45.86 1.45h11.28c.74 0 1.21-.8.86-1.45l-1.6-2.7V8.1A4.9 4.9 0 0 0 12 3.2Z"
+                  stroke="#FF9A2E" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M9.9 17.4a2.1 2.1 0 0 0 4.2 0" stroke="#FF9A2E" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+    </span>
+    <div class="sdn-slider">
+        <div class="sdn-row current" id="sdnRow0">
+            <span class="sdn-text" id="sdnText0">国家税务总局令第57号：《个人所得税综合所得汇算清缴管理办法》</span>
+        </div>
+        <div class="sdn-row next-below" id="sdnRow1">
+            <span class="sdn-text" id="sdnText1">关于近期虚假退税宣传的温馨提示</span>
+        </div>
+    </div>
+</div>
+
+
+<script src="js/ui_kit.js"></script>
+<script>
+    /* 默认配置（DEFAULTS，见 js/ui_kit.js）与改造前逐值一致：
+       不改配置时本页 DOM/观感与原写死节点完全相同 */
+    UIKit.render('shouye', document.getElementById('uiRoot'));
+</script>
+<script src="js/ui_editor.js"></script>
+
+<!-- ===== 帮助中心「修改首页」写入的自定义（图 / 热区）优先覆盖 UIKit 渲染结果 =====
+     存储键：geshui_custom_home_image / geshui_custom_hotspots（与绕过版同名）
+     应用方式：HomeCustom.applyToPage 按 [data-home-bg] 与 [data-hotspot="..."] 就地改写 -->
+<script src="js/home_custom.js"></script>
+<script>
+    (function () {
+        try {
+            if (window.HomeCustom && window.HomeCustom.applyToPage) {
+                window.HomeCustom.applyToPage('#uiRoot');
+            }
+        } catch (e) { /* 自定义数据异常时保持 UIKit 默认渲染 */ }
+    })();
+</script>
+
+<script>
+    /* ---------- iOS 底部安全区 ---------- */
+    (function () {
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) {
+            var nav = document.querySelector('.bottom-nav');
+            if (nav) nav.classList.add('ios-device');
+        }
+    })();
+
+    /* ---------- 字号缩放（源码 const scale = width / 1080） ---------- */
+    (function () {
+        function applyScale() {
+            document.documentElement.style.setProperty('--sd-unit', (window.innerWidth / 1080) + 'px');
+        }
+        applyScale();
+        window.addEventListener('resize', applyScale);
+        window.addEventListener('orientationchange', function () { setTimeout(applyScale, 300); });
+    })();
+</script>
+<script>
+    function showHelpTip(msg) { alert(msg); }
+</script>
+<script src="js/sdtab.js"></script>
+<script src="js/ensureUser.js"></script>
+<script src="js/watermark.js"></script>
+<script src="js/page-loading.js"></script>
+<script>
+    ensureUserId(function (userId) {
+        if (typeof watermarkRefresh === 'function') watermarkRefresh();
+    });
+</script>
+
+<script>
+/* ---------- 首页公告条滚动（逻辑逐行照搬源码 shouye.html:274-350，只改 id 前缀 sdn-） ----------
+   节奏：第 1 条横向跑马（80px/s）→ 走完上滑换成第 2 条 → 停 1s → 下滑回位 → 停 0.5s 循环 */
+(function () {
+    var row0 = document.getElementById('sdnRow0');
+    var row1 = document.getElementById('sdnRow1');
+    var text0 = document.getElementById('sdnText0');
+    var text1 = document.getElementById('sdnText1');
+    if (!row0 || !row1 || !text0) return;
+    var rafId = null;
+
+    function setTexts(html0, html1) {
+        if (html0 && text0) text0.textContent = html0;
+        if (html1 && text1) text1.textContent = html1;
+    }
+
+    function startScroll() {
+        row0.style.transition = 'none';
+        row1.style.transition = 'none';
+        row0.className = 'sdn-row current';
+        row1.className = 'sdn-row next-below';
+        text0.style.transform = 'translateX(0)';
+
+        requestAnimationFrame(function () {
+            /* sdn-slider 是 text0 的祖父元素（text0 -> sdn-row -> sdn-slider） */
+            var slider = text0.parentElement.parentElement;
+            slider.style.overflow = 'visible';
+            var containerLeft = slider.getBoundingClientRect().left;
+            var initialRight = text0.getBoundingClientRect().right;
+            slider.style.overflow = '';
+            /* 文字右边缘到容器左边缘的距离 = 文字真实宽度（含起始偏移） */
+            var total = initialRight - containerLeft;
+            var speed = 80;                     // px/s，与源码一致
+            var pos = 0;
+            var last = null;
+
+            function step(ts) {
+                if (!last) last = ts;
+                var delta = (ts - last) / 1000;
+                last = ts;
+                pos += speed * delta;
+                text0.style.transform = 'translateX(-' + pos + 'px)';
+                if (pos < total) {
+                    rafId = requestAnimationFrame(step);
+                } else {
+                    slideUp();
+                }
+            }
+            rafId = requestAnimationFrame(step);
+        });
+    }
+
+    function slideUp() {
+        row0.style.transition = 'transform 0.4s ease';
+        row1.style.transition = 'transform 0.4s ease';
+        row0.className = 'sdn-row exit-up';
+        row1.className = 'sdn-row current';
+        setTimeout(slideDown, 1000);
+    }
+
+    function slideDown() {
+        row0.style.transition = 'none';
+        row0.className = 'sdn-row next-below';
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                row0.style.transition = 'transform 0.4s ease';
+                row1.style.transition = 'transform 0.4s ease';
+                row0.className = 'sdn-row current';
+                row1.className = 'sdn-row exit-up';
+                setTimeout(function () {
+                    setTimeout(startScroll, 500);
+                }, 400);
+            });
+        });
+    }
+
+    setTimeout(startScroll, 500);
+})();
+</script>
+</body>
+</html>
