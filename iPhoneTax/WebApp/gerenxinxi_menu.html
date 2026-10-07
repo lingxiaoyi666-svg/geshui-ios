@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+<script src="js/apple.js"></script>
+
+<script>
+
+(function () {
+
+    const style = document.createElement('style');
+
+    style.innerHTML = `
+
+        body {
+
+            user-select: none;
+
+        }
+
+        input, textarea, [contenteditable] {
+
+            user-select: text !important;
+
+            -webkit-touch-callout: default !important;
+
+        }
+
+        * {
+
+            -webkit-touch-callout: none;
+
+        }
+
+    `;
+
+    document.head.appendChild(style);
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    document.addEventListener('keydown', function (e) {
+
+        if (e.key === "F12") e.preventDefault();
+
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+
+            e.preventDefault();
+
+        }
+
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+
+            e.preventDefault();
+
+        }
+
+    });
+
+    DisableDevtool({
+
+        disableMenu: true,
+
+        clearLog: true,
+
+        ondevtoolopen() {
+
+            document.documentElement.innerHTML = `
+
+                <div style="
+
+                    width:100vw;
+
+                    height:100vh;
+
+                    display:flex;
+
+                    justify-content:center;
+
+                    align-items:center;
+
+                    font-size:22px;
+
+                    background:#000;
+
+                    color:#fff;">
+
+                    暂无权限访问
+
+                </div>
+
+            `;
+
+            setTimeout(() => {
+
+                location.href = "about:blank";
+
+            }, 800);
+
+        }
+
+    });
+
+})();
+
+</script>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <title>个人信息</title>
+
+    <style>
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+        }
+
+        
+
+        html, body {
+
+            overflow-x: hidden;
+
+            scrollbar-width: none;
+
+            -ms-overflow-style: none;
+
+        }
+
+        
+
+        html::-webkit-scrollbar, body::-webkit-scrollbar {
+
+            display: none;
+
+        }
+
+        
+
+        body {
+
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
+            background-color: #f5f6fa;
+
+            min-height: 100vh;
+
+        }
+
+        
+
+        /* 顶部导航 */
+
+        .header {
+
+            background: #fff;
+
+            padding: 14px 16px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 100;
+
+            border-bottom: 1px solid #f0f0f0;
+
+        }
+
+        
+
+        .back-btn {
+
+            position: absolute;
+
+            left: 12px;
+
+            color: #1e6fff;
+
+            font-size: 15px;
+
+            text-decoration: none;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 2px;
+
+            -webkit-tap-highlight-color: transparent;
+
+            outline: none;
+
+        }
+
+        
+
+        .back-btn span:first-child {
+
+            font-size: 23px;
+
+            margin-right: 2px;
+
+        }
+
+        
+
+        .header-title {
+
+            font-size: 17px;
+
+            font-weight: 500;
+
+            color: #333;
+
+        }
+
+        
+
+        /* 菜单列表 */
+
+        .menu-container {
+
+            background: #fff;
+
+        }
+
+        
+
+        .menu-item {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 16px 16px;
+
+            border-bottom: 1px solid #f0f0f0;
+
+            cursor: pointer;
+
+        }
+
+        
+
+        .menu-item:active {
+
+            background: #f5f5f5;
+
+        }
+
+        
+
+        .menu-text {
+
+            font-size: 16px;
+
+            color: #333;
+
+        }
+
+        
+
+        .menu-arrow {
+
+            font-size: 18px;
+
+            color: #ccc;
+
+        }
+
+    </style>
+
+<script src="js/local_api.js"></script>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- ===== sd-spec 视觉对齐层（只覆盖外观，不改任何功能/逻辑/文案） ===== -->
+<style id="sd-spec-override">
+/* 二级页 header —— SPEC §3：白底 / 1px #F0F0F0 下边线 / 标题 18px 600 #1A1A1A / 返回 16px #1677FF */
+body .header{background:#FFFFFF!important;color:#1A1A1A!important;border-bottom:1px solid #F0F0F0!important;box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:0!important;padding:12px 16px!important;position:sticky!important;top:0!important;z-index:900!important}
+body .header::after{content:''!important;flex:0 0 70px;width:70px;min-width:70px}
+body .header .back-btn{position:static!important;left:auto!important;right:auto!important;flex:0 0 70px!important;width:70px;display:flex!important;align-items:center!important;gap:2px!important;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important;line-height:1.2!important;background:none!important;border:none!important;outline:none!important}
+body .header .back-btn img{width:9px!important;height:auto!important;filter:none!important;opacity:1!important;vertical-align:middle}
+/* 修正：原规则误把"返回"文字放大到 23px（首个子元素其实是 <img>），统一回 16px */
+body .header .back-btn span{font-size:16px!important;margin-right:0!important}
+body .header .header-title{flex:1 1 auto!important;min-width:0!important;margin:0!important;text-align:center!important;font-size:18px!important;font-weight:600!important;color:#1A1A1A!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body .header .header-link,body .header .header-right{position:static!important;flex:0 0 70px!important;width:70px;text-align:right;color:#1677FF!important;font-size:16px!important;text-decoration:none!important;opacity:1!important}
+/* 页面底色 + 底部胶囊导航留白（SPEC §1 TabBarChrome.height = 86） */
+html,body{background:#F5F6FA!important;background-color:#F5F6FA!important}
+body{padding-bottom:86px!important}
+/* 菜单列表 → 新版白卡（SPEC §4 card + list-row） */
+.menu-container{margin:12px 16px!important;background:#FFFFFF!important;border-radius:12px!important;overflow:hidden!important;box-shadow:none!important}
+.menu-item{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:16px!important;border-bottom:1px solid #F0F0F0!important;background:#FFFFFF}
+.menu-item:last-child{border-bottom:none!important}
+.menu-item:active{background:#F7F8FB!important}
+.menu-text{font-size:16px!important;font-weight:400!important;color:#1A1A1A!important}
+.menu-arrow{font-size:0!important;width:8px!important;height:8px!important;border-top:1.6px solid #C4C9D4!important;border-right:1.6px solid #C4C9D4!important;transform:rotate(45deg);color:transparent!important;flex:0 0 auto!important}
+</style>
+</head>
+
+<body>
+
+    <!-- 顶部导航 -->
+
+    <div class="header">
+
+        <a href="index.html" class="back-btn">
+
+            <img src="jt.png" style="width: 9px; vertical-align: middle;">
+
+            <span>返回</span>
+
+        </a>
+
+        <span class="header-title">个人信息</span>
+
+    </div>
+
+    
+
+    <!-- 菜单列表 -->
+
+    <div class="menu-container">
+
+        <div class="menu-item" onclick="goBasicInfo()">
+
+            <span class="menu-text">基本信息</span>
+
+            <span class="menu-arrow">&gt;</span>
+
+        </div>
+
+        <div class="menu-item" onclick="goTaxBenefit()">
+
+            <span class="menu-text">可享税收优惠</span>
+
+            <span class="menu-arrow">&gt;</span>
+
+        </div>
+
+        <div class="menu-item" onclick="goOtherID()">
+
+            <span class="menu-text">其他身份证件</span>
+
+            <span class="menu-arrow">&gt;</span>
+
+        </div>
+
+    </div>
+
+    
+
+    <script>
+
+        // 跳转到基本信息
+
+        function goBasicInfo() {
+
+            window.location.href = 'gerenxinxi.html';
+
+        }
+
+        
+
+        // 跳转到可享税收优惠
+
+        function goTaxBenefit() {
+
+            window.location.href = 'tax_benefit.html';
+
+        }
+
+        
+
+        // 跳转到其他身份证件
+
+        function goOtherID() {
+
+            window.location.href = 'other_id.html';
+
+        }
+
+    </script>
+
+    <script src="js/ensureUser.js"></script>
+
+    <script src="js/watermark.js"></script>
+
+    <script>ensureUserId(function(){if(typeof watermarkRefresh==='function'){watermarkRefresh();}});</script>
+
+<script src="js/page-loading.js"></script>
+    <nav class="bottom-nav"></nav>
+    <script src="js/sdtab.js"></script>
+</body>
+
+</html>
