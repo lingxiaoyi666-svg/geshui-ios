@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<script src="js/apple.js"></script>
+<script>
+(function () {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        body {
+            user-select: none;
+        }
+        input, textarea, [contenteditable] {
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        * {
+            -webkit-touch-callout: none;
+        }
+    `;
+    document.head.appendChild(style);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', function (e) {
+        if (e.key === "F12") e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) {
+            e.preventDefault();
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === "u") {
+            e.preventDefault();
+        }
+    });
+    DisableDevtool({
+        disableMenu: true,
+        clearLog: true,
+        ondevtoolopen() {
+            document.documentElement.innerHTML = `
+                <div style="
+                    width:100vw;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    font-size:22px;
+                    background:#000;
+                    color:#fff;">
+                    暂无权限访问
+                </div>
+            `;
+            setTimeout(() => {
+                location.href = "about:blank";
+            }, 800);
+        }
+    });
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>综合所得年度汇算</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f6fa;
+            min-height: 100vh;
+        }
+        /* erji.jpg 为整页切图：仅展示顶栏+插画，下方用 HTML 按钮保证可点 */
+        .page-hero {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            max-height: clamp(168px, 42vw, 240px);
+            line-height: 0;
+        }
+        .page-hero-img {
+            width: 100%;
+            display: block;
+            vertical-align: top;
+        }
+        .page-hero-hit {
+            position: absolute;
+            display: block;
+            background: transparent;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            z-index: 2;
+        }
+        .page-hero-hit-back {
+            left: 0;
+            top: 0;
+            width: 30%;
+            height: 45%;
+            min-height: 44px;
+        }
+        .panel {
+            margin: -10px 12px 24px;
+            position: relative;
+            z-index: 3;
+            background: #fff;
+            border-radius: 12px;
+            padding: 18px 16px 22px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+        .warm-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .warm-list {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.65;
+            padding-left: 18px;
+            margin-bottom: 20px;
+        }
+        .warm-list li { margin-bottom: 8px; }
+        .year-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 4px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 20px;
+            font-size: 15px;
+            color: #333;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .year-row .year-val {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #333;
+            font-weight: 500;
+        }
+        .year-row .chev {
+            color: #ccc;
+            font-size: 18px;
+            font-weight: 300;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            margin-bottom: 14px;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative;
+            z-index: 1;
+            cursor: pointer;
+        }
+        .btn:last-child {
+            margin-bottom: 0;
+        }
+        .btn-primary {
+            background: linear-gradient(180deg, #3d8dff 0%, #1e6fff 100%);
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 12px rgba(30, 111, 255, 0.35);
+        }
+        .btn-outline {
+            background: #fff;
+            color: #1e6fff;
+            border: 1px solid #1e6fff;
+        }
+        .footer-link {
+            display: block;
+            text-align: center;
+            padding: 20px 16px 28px;
+            font-size: 14px;
+            color: #999;
+            text-decoration: none;
+        }
+        html.app-top-safe-shell body.page-zonghe {
+            padding-top: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="css/nav.css">
+    <script src="js/theme-loader.js" defer></script>
+<script src="js/local_api.js"></script>
+    <link rel="stylesheet" href="css/sdtheme.css">
+<!-- SD_PAGE_SKIN_START -->
+<style id="sd-page-skin">
+/* ============================================================
+   SD 页面皮肤层 —— 通用基线（SPEC.md §3/§4/§5 对齐）
+   注入位置：各页 <head> 内 css/sdtheme.css 之后
+   原则：只覆盖视觉属性；绝不覆盖 display（弹层由 JS 切 display）
+   ============================================================ */
+
+/* ---------------- SPEC §3 二级页 header ---------------- */
+/* 注意：不覆盖 position/top/left/right/z-index —— chaxun/xiangqing 的 header 是
+   position:fixed 且 chaxun 的 JS(alignList) 依赖其实测高度；只改视觉属性。 */
+html body .header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    box-shadow: none !important;
+    padding: 12px 16px !important;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+html body .header .back-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    max-width: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    color: #1677FF !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    -webkit-tap-highlight-color: transparent;
+}
+html body .header .back-icon,
+html body .header .back-btn img {
+    width: 10px !important;
+    height: 10px !important;
+    object-fit: contain !important;
+    filter: none !important;
+    display: block !important;
+}
+/* 图片箭头统一替换为 CSS 矢量箭头（10×10 的 jt.png 放大到 18px 会糊；颜色统一 #1677FF） */
+html body .header .back-btn:has(img) img { display: none !important; }
+html body .header .back-btn:has(img)::before {
+    content: '' !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 4px !important;
+    border-left: 1.6px solid #1677FF !important;
+    border-bottom: 1.6px solid #1677FF !important;
+    transform: rotate(45deg) !important;
+}
+/* 只有箭头、没有「返回」文字的页（jingyingsuode / shenbao_jilu）补出 SPEC .backText 文案 */
+html body .header .back-btn:has(img):not(:has(span))::after {
+    content: '返回' !important;
+    font-size: 16px !important;
+    color: #1677FF !important;
+    margin-left: 2px !important;
+}
+html body .header .header-title,
+html body .header h1,
+html body .header h1.header-title,
+html body .header button.header-title {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    color: #1A1A1A !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-family: inherit !important;
+}
+html body .header .header-right,
+html body .header .header-link,
+html body .header .header-btn {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    text-align: right !important;
+    color: #1677FF !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* ---------------- 底栏避让（SPEC TabBarChrome: height 86） ---------------- */
+html body {
+    padding-bottom: var(--sd-nav-clearance, 86px) !important;
+    background: #F5F6FA !important;
+}
+
+/* ---------------- SPEC §5 弹层：层级必须高于胶囊导航(z-index 9000) ---------------- */
+html body .mask,
+html body .edit-mask,
+html body .picker-overlay,
+html body .modal-mask,
+html body .year-overlay,
+html body .modal-root {
+    z-index: 9500 !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+html body .modal,
+html body .edit-modal,
+html body .modal-panel,
+html body .year-sheet,
+html body .year-picker {
+    z-index: 9501 !important;
+    background: #fff !important;
+}
+html body .toast,
+html body #toast {
+    z-index: 9600 !important;
+}
+/* 居中深色圆角提示（SPEC：居中弹窗体系） */
+html body .toast {
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    max-width: 76% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+}
+html body .toast.show,
+html body .toast.visible,
+html body .toast.active {
+    transform: translate(-50%, -50%) !important;
+}
+
+/* ---------------- SPEC §4 卡片基线 ---------------- */
+html body .card,
+html body .info-card,
+html body .detail-card,
+html body .panel,
+html body .gen-card,
+html body .grid-wrap,
+html body .type-list,
+html body .year-select,
+html body .year-select-wrap,
+html body .list-item,
+html body .record-item {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ---------------- SPEC §4 按钮 ---------------- */
+html body .btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+html body .btn-primary,
+html body .submit-btn,
+html body .save-btn,
+html body .confirm-btn {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #1677FF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+}
+html body .btn-secondary,
+html body .btn-outline {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    border: 1px solid #1677FF !important;
+    border-radius: 8px !important;
+    padding: 14px 0 !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #1677FF !important;
+    text-align: center !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: inherit !important;
+}
+
+/* ---------------- SPEC §4 文本色阶 ---------------- */
+html body .link-btn,
+html body .info-link { color: #1677FF !important; text-decoration: none !important; }
+html body .del-btn { color: #FF4D4F !important; text-decoration: none !important; }
+
+/* ---------------- header 左右对称（SPEC §3：左右各 70px） ---------------- */
+/* 没有右侧操作位的页补一个平衡块，让标题真正居中；有 .header-right/.header-link 的页不生成 */
+html body .header:not(:has(.header-right)):not(:has(.header-link)):not(:has(.header-btn))::after {
+    content: '' !important;
+    flex: 0 0 70px !important;
+    width: 70px !important;
+}
+
+/* ---------------- 防横向溢出兜底 ----------------
+   改前多页存在 input/select 固有宽度把 body 撑宽的问题（实测 nashui_edit scrollWidth=822 vs 390），
+   这里只约束盒宽与裁掉溢出，不改任何布局语义/功能。 */
+html body input,
+html body select,
+html body textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+html body img,
+html body svg {
+    max-width: 100% !important;
+}
+html body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* zonghe.html —— 综合所得年度汇算（图片头 erji.jpg，无 .header 节点） */
+html body .page-hero { line-height: 0 !important; }
+html body .panel {
+    background: #fff !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin: -10px 12px 24px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+html body .warm-title {
+    position: relative !important;
+    padding-left: 11px !important;
+    margin-bottom: 12px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #1A1A1A !important;
+}
+html body .warm-title::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 3px !important;
+    height: 16px !important;
+    background: #1677FF !important;
+    border-radius: 2px !important;
+}
+html body .warm-list { font-size: 14px !important; color: #666 !important; line-height: 1.65 !important; }
+html body .year-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 14px 0 !important;
+    margin-bottom: 20px !important;
+    border-bottom: 1px solid #F0F0F0 !important;
+    font-size: 15px !important;
+    color: #1A1A1A !important;
+}
+html body .year-row .year-val { color: #1A1A1A !important; font-weight: 500 !important; }
+html body .year-row .chev { color: #C4C9D4 !important; font-size: 18px !important; }
+html body .footer-link { color: #1677FF !important; font-size: 14px !important; text-decoration: none !important; }
+
+</style>
+<!-- SD_PAGE_SKIN_END -->
+</head>
+<body class="page-zonghe">
+    <div class="page-hero">
+        <img class="page-hero-img" src="erji.jpg?v=3" alt="综合所得年度汇算">
+        <a href="bancha.html" class="page-hero-hit page-hero-hit-back" aria-label="返回"></a>
+    </div>
+    <div class="panel">
+        <h2 class="warm-title">温馨提示</h2>
+        <ul class="warm-list">
+            <li>如您仅有境内所得且需要办理汇算，请选择申报年度后点击下方「开始申报」。</li>
+            <li>您可点击「查看申报记录」查询以往申报情况。</li>
+        </ul>
+        <div class="year-row" id="yearRow" role="button" tabindex="0">
+            <span>申报年度</span>
+            <span class="year-val"><span id="yearDisplay">2025</span><span class="chev">›</span></span>
+        </div>
+        <a class="btn btn-primary" href="shenbao_jilu.html" id="btnStartDeclare">开始申报</a>
+        <a class="btn btn-outline" href="shenbao_jilu.html" id="btnViewRecords">查看申报记录</a>
+    </div>
+    <a href="javascript:void(0)" class="footer-link" id="linkOverseas">取得了境外所得，点击这里</a>
+    <script src="js/watermark.js?v=20260511-mine-wm"></script>
+    <script>
+        (function () {
+            var row = document.getElementById('yearRow');
+            var years = ['2025', '2024', '2023'];
+            var idx = 0;
+            var disp = document.getElementById('yearDisplay');
+            function cycle() {
+                idx = (idx + 1) % years.length;
+                disp.textContent = years[idx];
+            }
+            row.addEventListener('click', cycle);
+            row.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    cycle();
+                }
+            });
+            document.getElementById('linkOverseas').addEventListener('click', function (e) {
+                e.preventDefault();
+            });
+        })();
+    </script>
+    <script src="js/watermark.js"></script>
+<script src="js/page-loading.js"></script>
+    <script src="js/sdtab.js"></script>
+<nav class="bottom-nav"></nav>
+</body>
+</html>
